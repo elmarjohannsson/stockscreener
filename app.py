@@ -2,7 +2,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 import pickle
-from server import app
+from server import app, server
 from apps import company
 
 # creating the layout
@@ -31,6 +31,8 @@ def get_app_layout():
     ])
     return layout
 
+
+server = server
 
 app.layout = get_app_layout()
 
