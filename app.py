@@ -2,11 +2,15 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 import pickle
+import os
 from server import app, server
 from apps import company
+from dataDownloads import save_nasdaqcph_companies
 
 # creating the layout
 def get_app_layout():
+    if not os.path.isfile('data/pickles/search.pickle'):  # if the file does not exist we have to create it.
+        save_nasdaqcph_companies()
     search = pickle.load(open('data/pickles/search.pickle', 'rb'))
     layout = html.Div([
         dcc.Location(

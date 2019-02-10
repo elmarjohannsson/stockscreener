@@ -45,6 +45,12 @@ def save_nasdaqcph_companies():
             sectors[sector] = list()
     # print(search)
 
+    # creating the directories if they don't exist
+    if not os.path.isdir("data"):
+        os.mkdir("data")
+    if not os.path.isdir("data/pickles"):
+        os.mkdir("data/pickles")
+
     with open('data/pickles/universe_companies.pickle', 'wb') as f:   # Dictionary with all companies. key:ticker values:isin, name, currency, sector, icb
         pickle.dump(companies, f, protocol=pickle.HIGHEST_PROTOCOL)
 
