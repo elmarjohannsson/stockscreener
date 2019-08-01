@@ -175,9 +175,9 @@ if __name__ == "__main__":
     # check_empty_data()
     analyse_all(True)
 
-    # individual_analysis('DLH.CO')
+    # individual_analysis('DLH.CPH')
 
-    # AaB_stock = stock_analysis('DLH.CO', 'DK0060868966', 'DLH', '', '5700', apikey)
+    # AaB_stock = stock_analysis('DLH.CPH', 'DK0060868966', 'DLH', '', '5700', apikey)
     # AaB_stock.download_all()
 
     # save_nasdaqcph_companies()

@@ -17,21 +17,19 @@ def get_app_layout():
             id='url',
             refresh=False
         ),
-        html.Div([
-            html.Div([
-                html.Div([
-                    html.A(href='/', children=html.H2('StockScreener.dk')),
-                ], className='column col-3'),
-                html.Div([
-                    dcc.Dropdown(options=[{'label': l[1], 'value': l[0]}
-                                          for l in search
-                                          ],
-                                 id='searchbar',
-                                 placeholder='Enter Company Name or Ticker')
-                ], className='column col-3'),
-            ], className='columns col-gapless'),
-        ], className='container, header'),
-        html.Div(id='page-content')
+        html.Div([  # class=container - div that contains the whole page
+            html.Div([  # header name and icon
+                html.A(href='/', children=html.H3('StockScreener')),
+            ], className=''),
+            html.Div([  # search function
+                dcc.Dropdown(options=[{'label': l[1], 'value': l[0]}
+                                      for l in search
+                                      ],
+                             id='searchbar',
+                             placeholder='Search for stock')
+            ], className=''),
+            html.Div(id='page-content')
+        ], className='container'),
     ])
     return layout
 

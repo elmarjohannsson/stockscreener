@@ -25,9 +25,7 @@
 .tab-locator:nth-of-type(3):checked ~ .tabs > .tab-content:nth-of-type(3) {
     display:block;
 }
-.container {
-    width: 80%;
-}
+
 .bold{
     font-weight: bold;
 }
@@ -35,10 +33,9 @@ a, a:hover, a:visited {
   color: black;
   text-decoration: none; /* no underline */
 }
-.header{
-  margin-top: 30px;
-  margin-left: 30%;
-}
 .center{
   text-align:center;
+}
+#stock_graph{
+  margin-top: 5px;
 }

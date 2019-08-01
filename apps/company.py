@@ -1,3 +1,4 @@
+# This file creates the layout for each individual firms page on the url /company/ticker
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
@@ -11,29 +12,37 @@ import usedata
 import components
 from settings import GRAPHSETTINGS as gs
 
-# making the html and graphs for the companies financials.
+# making the html component for the graphs of the companies financials.
 def get_financial_graphs(stock):
-    # Getting the keyratios for the financials graphs
+    # Getting the keyratios for the financials graphs and checking if the files are empty. If they are they should not be added.
+    kr_url = f'data/CompanyData/{stock.ticker}/{stock.ticker}_KeyRatios.cvs'
     # if keyratios.cvs is not empty then get it
-    if os.stat(f'data/CompanyData/{stock.ticker}/{stock.ticker}_KeyRatios.cvs').st_size == 0:
+    if not os.path.isfile(kr_url):
+        add_income = False
+    elif os.stat(kr_url).st_size == 0:
         add_income = False
     else:
         revenue, grossMargin, operatingIncome, operatingMargin, netIncome = stock.get_income()
-        print("get_income function success")
         add_income = True
+
+    bs_url = f'data/CompanyData/{stock.ticker}/{stock.ticker}_BalanceSheet.cvs'
     # if balance sheet is not empty then get it
-    if os.stat(f'data/CompanyData/{stock.ticker}/{stock.ticker}_BalanceSheet.cvs').st_size == 0:
+    if not os.path.isfile(bs_url):
+        add_balance = False
+    elif os.stat(bs_url).st_size == 0:
         add_balance = False
     else:
         assets, liabilities = stock.get_balance()
-        print("get_balance function success")
         add_balance = True
+
+    cf_url = f'data/CompanyData/{stock.ticker}/{stock.ticker}_CashFlow.cvs'
     # if cash flow is not empty then get it
-    if os.stat(f'data/CompanyData/{stock.ticker}/{stock.ticker}_CashFlow.cvs').st_size == 0:
+    if not os.path.isfile(cf_url):
+        add_cashflow = False
+    elif os.stat(cf_url).st_size == 0:
         add_cashflow = False
     else:
         operating, investing, financing = stock.get_cashflow()
-        print("get_cashflow function success")
         add_cashflow = True
 
     financial_graphs = []
@@ -43,7 +52,7 @@ def get_financial_graphs(stock):
         is_maxrange = len(revenue.index.tolist()) - 0.5
         is_startrange = is_maxrange - 4
         # Income Statement Graph
-        income_statement = html.Div(className='column col-7', children=[
+        income_statement = html.Div(className='', children=[
             dcc.Graph(
                 id='is_graph',
                 config=gs['config'],
@@ -73,7 +82,7 @@ def get_financial_graphs(stock):
             )
         ])
         # make table for income statement. One row for each value in row.
-        income_table = components.Table([revenue, operatingIncome, netIncome, grossMargin, operatingMargin], html_class='column col-5').make_graph_table()
+        income_table = components.Table([revenue, operatingIncome, netIncome, grossMargin, operatingMargin], html_class='').make_graph_table()
         financial_graphs.append(income_statement)
         financial_graphs.append(income_table)
         print("Income added")
@@ -82,7 +91,7 @@ def get_financial_graphs(stock):
         bs_maxrange = len(assets.index.tolist()) - 0.5
         bs_startrange = bs_maxrange - 4
         # Balance Sheet Graph
-        balance_sheet = html.Div(className='column col-7', children=[
+        balance_sheet = html.Div(className='', children=[
             dcc.Graph(
                 id='bs_graph',
                 config=gs['config'],
@@ -109,7 +118,7 @@ def get_financial_graphs(stock):
             ),
         ])
         # make table for balance sheet. One row for each value in row.
-        balance_sheet_table = components.Table([assets, liabilities], html_class='column col-5').make_graph_table()
+        balance_sheet_table = components.Table([assets, liabilities], html_class='').make_graph_table()
         financial_graphs.append(balance_sheet)
         financial_graphs.append(balance_sheet_table)
         print("Balance added")
@@ -121,12 +130,12 @@ def get_financial_graphs(stock):
 
         if operating is None:
             graph_data = [components.make_graph(investing, '#33cc33', 'bar'), components.make_graph(financing, '#2C02F5', 'bar')]
-            cashflow_table = components.Table([investing, financing], html_class='column col-5').make_graph_table(['Investing Activities', 'Financing Activities'])
+            cashflow_table = components.Table([investing, financing], html_class='').make_graph_table(['Investing Activities', 'Financing Activities'])
         else:
             graph_data = [components.make_graph(operating, '#53fc43', 'bar'), components.make_graph(investing, '#33cc33', 'bar'), components.make_graph(financing, '#2C02F5', 'bar')]
-            cashflow_table = components.Table([operating, investing, financing], html_class='column col-5').make_graph_table(['Operating Activities', 'Investing Activities', 'Financing Activities'])
+            cashflow_table = components.Table([operating, investing, financing], html_class='').make_graph_table(['Operating Activities', 'Investing Activities', 'Financing Activities'])
         # Cash Flow Graph
-        cashflow = html.Div(className='column col-7', children=[
+        cashflow = html.Div(className='', children=[
             dcc.Graph(
                 id='cf_graph',
                 config=gs['config'],
@@ -150,46 +159,57 @@ def get_financial_graphs(stock):
         financial_graphs.append(cashflow)
         financial_graphs.append(cashflow_table)
 
-    financials_html = html.Div(className='container', children=[
-        html.Div(className='columns', children=financial_graphs)
+    financials_html = html.Div(className='', children=[
+        html.Div(className='', children=financial_graphs)
     ])
     print("Cashflow added")
     return financials_html
 
+# creating the table component for the stock price growth.
 def get_stock_growth(stock):
     price_growth = stock.stock_growth()
-    th = []
-    td = []
-
-    for key, val in price_growth.items():
-        th.append(html.Th(key))
-        td.append(html.Td("{0:.2f}%".format(val)))
-
-    table_html = [html.Table(className='table table-striped table-hover', children=[
-        html.Thead(
-            html.Tr(th)
-        ),
-        html.Tbody(
-            html.Tr(td)
-        )
-    ])]
-
-    growth_html = html.Div(className='container', children=[
-        html.Div(className='columns', children=[
-            html.Div(className='column col-12', children=table_html)
+    if price_growth == "*":
+        table = html.Div(className='', children=[
+            html.Div(className='', children=[
+                html.Div(className='', children=html.H4('Sorry, prices are unavailable.'))
+            ])
         ])
-    ])
-    print("Stock growth")
-    return growth_html
+    else:
+        td = []
+        th = []
+        for key, val in price_growth.items():
+            if str(key) in "2w 2m 2y":
+                continue
+            if "1w" in str(key):
+                key = str(key).replace("w", " Week")
+            elif "w" in str(key):
+                key = str(key).replace("w", " Weeks")
 
+            if "1m" in str(key):
+                key = str(key).replace("m", " Month")
+            elif "m" in str(key):
+                key = str(key).replace("m", " Months")
+
+            if "1y" in str(key):
+                key = str(key).replace("y", " Year")
+            elif "y" in str(key):
+                key = str(key).replace("y", " Years")
+
+            td.append(html.Td("{0:.2f}%".format(val), className="center-align"))
+            th.append(html.Th(key, className="center-align bold"))
+
+        table = html.Table(className='col s11', children=[html.Thead(html.Tr(th)), html.Tbody(html.Tr(td))])
+    return table
+
+# creating the table component for all of the key ratios.
 def get_keyratios_table(stock):
     if os.stat(f'data/CompanyData/{stock.ticker}/{stock.ticker}_KeyRatios.cvs').st_size == 0:
-        keyratios_html = html.Div(className='container', children=[
+        keyratios_html = html.Div(className='', children=[
             html.H5(f'*Key Ratios do not exist for {stock.name}')
         ])
     else:
         rev_growth_vals, inc_growth_vals, efficiency_vals, financials_vals, profitability_vals, cashflow_vals, liquidity_vals = stock.get_all_keyratios()
-        print("get_all_keyratios function success")
+        # print("get_all_keyratios function success")
         all_keyratios = [financials_vals, profitability_vals, cashflow_vals, liquidity_vals, efficiency_vals, rev_growth_vals, inc_growth_vals]
         keyratios_name = ["Financials", "Profitability", "Cash Flow", "Liquidity", "Efficiency", "Revenue growth, %", "Net income growth, %"]
         keyratios_startrow = [-1, -1, -1, -1, -1, -1, -2]
@@ -201,9 +221,9 @@ def get_keyratios_table(stock):
                 del(keyratios_startrow[num])
             num += 1
 
-        keyratios_html = html.Div(className='container', children=[
-            html.Div(className='columns', children=[
-                html.Div(className='column col-12', children=[
+        keyratios_html = html.Div(className='', children=[
+            html.Div(className='', children=[
+                html.Div(className='', children=[
                     components.Table(
                         all_keyratios,
                         title=[val for val in keyratios_name],
@@ -214,51 +234,67 @@ def get_keyratios_table(stock):
         ])
     return keyratios_html
 
+def get_graph_key_stats_section(stock):
+    section_one_html = html.Div([  # section div
+        html.Div([  # row div
+            html.Div([  # col 12 div
+                html.H4(f'{stock.name}', className='center-align')
+            ], className='col s12'),
+            html.Div([
+                html.Div(className="divider"),
+                html.H5(f"STOCK PERFORMANCE ({stock.stock_currency})", className="center-align"),
+                html.Div([  # col 10 for graph
+                    dcc.Graph(id='stock_graph', config=gs['config'])
+                ], className='col s11'),
+                html.Div([  # col-2 for checklist menu
+                    dcc.Checklist(  # checklist for graph settings
+                        id='dropdown_graph_options',
+                        className="",
+                        options=[
+                            {'label': 'Close', 'value': 3},
+                            {'label': 'High', 'value': 1},
+                            {'label': 'Low', 'value': 2},
+                            {'label': 'Adjusted Close', 'value': 4}
+                        ],
+                        value=[3],
+                        labelClassName="checkbox",
+                        inputClassName="",
+                        labelStyle={"display": "block"}
+                    )
+                ], className='col s1'),
+                get_stock_growth(stock),  # Stock growth section
+            ], className='col l9 push-l3 s12'),
+            html.Div([  # key statistics table col 4
+                html.Div(className="divider"),
+                html.H5("KEY STATISTICS", className="center-align"),
+                components.table_keystats(stock)
+            ], className='col l3 pull-l9 s8 offset-s2')
+            # insert key stat table here
+        ], className='row'),
+    ], className='section')
+    return section_one_html
+
+# the final layout that adds all of the components together.
 def companyLayout(ticker, name, isin, sector, stock_currency):
     stock = usedata.Stock(ticker, name, isin, sector, stock_currency)
     # html layout
     layout = html.Div([
         dcc.Location(id='url2', refresh=False),
-        html.Div([
-            html.Div([
-                html.Div([
-                    html.H3(f'{name} ({stock_currency})')
-                ], className='column col-12 center'),
-                html.Div([
-                    dcc.Dropdown(
-                        id='dropdown_graph_options',
-                        options=[
-                            {'label': 'High', 'value': 1},
-                            {'label': 'Low', 'value': 2},
-                            {'label': 'Close', 'value': 3},
-                            {'label': 'Adjusted Close', 'value': 4}
-                        ],
-                        value=[3],
-                        clearable=False,
-                        multi=True,
-                        searchable=False
-                    )
-                ], className='column col-4 col-ml-auto'),
-            ], className='columns'),
-        ], className='container'),
-        html.Div([
-            dcc.Graph(id='stock_graph', config=gs['config'])
-        ]),
-        get_stock_growth(stock),
-        print("get_stock_growth function success"),
+        get_graph_key_stats_section(stock),
         html.Br(),
-        get_financial_graphs(stock),
-        print("get_financial_graphs function success"),
-        get_keyratios_table(stock),
-        print("get_keyratios_table function success")
+        get_financial_graphs(stock),  # Financial graphs section
+        # get_keyratios_table(stock),  # financial key ratios section
     ])
     return layout
 
+# when there are any changes done to the stock price graph this call back function gets called and updates the graph.
+# This is also were all of the settings and behavior of the graph is determined.
 @app.callback(
     Output('stock_graph', 'figure'),
     [Input('dropdown_graph_options', 'value'),
      Input('stock_graph', 'relayoutData'),
-     Input('url2', 'pathname')]
+     Input('url2', 'pathname')
+     ]
 )
 def update_graph(value, relayoutData, pathname):
     graph = []
@@ -284,7 +320,7 @@ def update_graph(value, relayoutData, pathname):
         append_graph(graphValues[val][0], graphValues[val][1], graphValues[val][2])
 
     today = dt.date.today()
-    yearago = today - dt.timedelta(days=365)
+    yearago = today - dt.timedelta(days=181)
     startdict = {'autosize': True}
     autorange = {'xaxis.autorange': True}
 
@@ -413,12 +449,18 @@ def update_graph(value, relayoutData, pathname):
 
     # print('finalend ', enddate, type(enddate))
     # print('finalstart ', startdate, type(startdate))
-    print("update_graph function success")
+    # print("update_graph function success")
     return {
         'data': graph,
         'layout': go.Layout(
-            title="Daily Prices",
+            # title="Chart",
             height=700,
+            margin=go.Margin(
+                l=0,
+                r=0,
+                b=0,
+                t=0,
+                pad=0),
             yaxis=dict(
                 range=[minval, maxval]
             ),
@@ -427,15 +469,19 @@ def update_graph(value, relayoutData, pathname):
                 rangeselector=dict(
                     buttons=list([
                         dict(count=7,
-                             label='1w',
+                             label='1W',
                              step='day',
                              stepmode='backward'),
                         dict(count=1,
-                             label='1m',
+                             label='1M',
+                             step='month',
+                             stepmode='backward'),
+                        dict(count=3,
+                             label='3M',
                              step='month',
                              stepmode='backward'),
                         dict(count=6,
-                             label='6m',
+                             label='6M',
                              step='month',
                              stepmode='backward'),
                         dict(count=1,
@@ -443,18 +489,18 @@ def update_graph(value, relayoutData, pathname):
                              step='year',
                              stepmode='todate'),
                         dict(count=1,
-                             label='1y',
+                             label='1Y',
                              step='year',
                              stepmode='backward'),
                         dict(count=2,
-                             label='2y',
+                             label='2Y',
                              step='year',
                              stepmode='backward'),
                         dict(count=5,
-                             label='5y',
+                             label='5Y',
                              step='year',
                              stepmode='backward'),
-                        dict(step='all')
+                        dict(step='all', label="All")
                     ])
                 ),
                 rangeslider=dict(
@@ -467,7 +513,7 @@ def update_graph(value, relayoutData, pathname):
                 ),
                 type='date'
             ),
-            showlegend=True,
+            showlegend=False,
             dragmode='pan'
         )
     }
