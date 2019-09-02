@@ -6,3 +6,4 @@ todo.txt
 *.pyc
 .DS_Store
 .env
+settings.py
