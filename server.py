@@ -1,13 +1,17 @@
 import dash
 
-# external css
-font = 'https://fonts.googleapis.com/icon?family=Material+Icons'
-external_stylesheets = [font]
+# # external css
+# icons = 'https://fonts.googleapis.com/icon?family=Material+Icons'
+# external_stylesheets = [icons, {"href": icons, "rel": "stylesheet"}]
 
-app = dash.Dash(
-    __name__,
-    external_stylesheets=external_stylesheets
-)
+
+# external_scripts = [
+#     {"src": "https://code.jquery.com/jquery-3.4.1.min.js",
+#      "integrity": "sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=",
+#      "crossorigin": "anonymous"}
+# ]
+
+app = dash.Dash(__name__)
 
 # adding custom meta tags
 app = dash.Dash(meta_tags=[

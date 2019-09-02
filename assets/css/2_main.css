@@ -1,0 +1,144 @@
+._dash-loading {
+  text-align: center;
+  margin-top: 50px;
+}
+._dash-undo-redo {
+  display: none;
+}
+.tab-item > label:hover {
+    cursor: pointer;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-locator:nth-of-type(1):checked ~ .tab-block > .tab-item:nth-of-type(1) > label > a,
+.tab-locator:nth-of-type(2):checked ~ .tab-block > .tab-item:nth-of-type(2) > label > a,
+.tab-locator:nth-of-type(3):checked ~ .tab-block > .tab-item:nth-of-type(3) > label > a {
+    border-bottom-color: #5764c6;
+    color: #5764c6;
+}
+
+.tab-locator:nth-of-type(1):checked ~ .tabs > .tab-content:nth-of-type(1),
+.tab-locator:nth-of-type(2):checked ~ .tabs > .tab-content:nth-of-type(2),
+.tab-locator:nth-of-type(3):checked ~ .tabs > .tab-content:nth-of-type(3) {
+    display:block;
+}
+
+.bold{
+    font-weight: bold;
+}
+a, a:hover, a:visited {
+  color: black;
+  text-decoration: none; /* no underline */
+}
+.center{
+  text-align:center;
+}
+#stock_graph{
+  margin-top: 5px;
+}
+
+/* fallback */
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url(https://fonts.gstatic.com/s/materialicons/v48/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');
+}
+
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+.navbar-basic {
+  background-color: white;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  border-top: 1px solid #868E96;
+  color: black;
+}
+.table-th {
+  width: 25%;
+}
+.pt15 {
+  padding-top: 10px!important
+}
+.my-green{
+  color: #3DAEA2;
+  background-color: #3DAEA2;
+}
+.my-blue{
+  color: #20639B;
+  background-color: #20639B;
+}
+a.my-blue:hover {
+  color: #3471A4;
+  background-color: #3471A4;
+}
+.my-dark-blue{
+  color: #153F5F;
+  background-color: #153F5F;
+}
+.my-red{
+  color: #C70838;
+  background-color: #C70838;
+}
+.my-orange{
+  color: #FE4A3B;
+  background-color: #FE4A3B;
+}
+nav{
+  background-color:inherit;
+  box-shadow: none;
+  border-bottom: 2px;
+}
+.stock-checkbox{
+  margin-top: 10px;
+  height: 22.5px;
+  line-height: 22.5px;
+  font-size: 11.25px;
+  width:91px;
+}
+
+.stock-checkbox:nth-child(1) {
+  background-color: #20639B;
+}
+.stock-checkbox:nth-child(2) {
+  background-color: #3DAEA2;
+}
+
+.stock-checkbox:nth-child(3) {
+  background-color: #C70838;
+}
+
+.stock-checkbox:nth-child(4) {
+  background-color: #153F5F;
+}
+.indent{
+  text-indent:5%;
+}
+.top-margin25{
+  margin-top: 25px;
+}
+@media only screen and (min-width: 1201px) {
+  .financials-graph {
+    margin-top: 2em;
+  }
+}
+.margin-bot0{
+  margin-bottom: 0;
+}

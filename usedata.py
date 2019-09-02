@@ -4,7 +4,6 @@ import os
 import datetime as dt
 import pp
 import time
-from decimal import Decimal
 import urllib.request
 import json
 from settings import APIKEY
@@ -17,9 +16,25 @@ class Stock(object):
         self.sector = sector
         self.stock_currency = stock_currency
         self.today = dt.date.today()
+        self.use_data = self.most_recent_data()  # "daily" or "adj"
         self.past_prices_close = self.historical_stock_price_close()
 
+    def most_recent_data(self):
+        if os.path.isfile(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs') and os.path.isfile(f'data/CompanyData/{self.ticker}/{self.ticker}_DailyPrices.cvs'):  # Finding the one with the most recent data
+            daily_adj_mtime = os.path.getmtime(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs')
+            daily_mtime = os.path.getmtime(f'data/CompanyData/{self.ticker}/{self.ticker}_DailyPrices.cvs')
+            if daily_mtime > daily_adj_mtime:
+                return "daily"
+            elif daily_mtime < daily_adj_mtime:
+                return "adj"
+            else:
+                return "adj"
+        elif os.path.isfile(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs'):
+            return "adj"
+        elif os.path.isfile(f'data/CompanyData/{self.ticker}/{self.ticker}_DailyPrices.cvs'):
+            return "daily"
     # Opens the whole balance sheet file
+
     def open_balance(self):
         # Returns the company's balance sheet as a cvs file
         df_balance = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_BalanceSheet.cvs', delimiter=',', header=1, skip_blank_lines=True, index_col=[0], error_bad_lines=False)
@@ -27,8 +42,13 @@ class Stock(object):
         return df_balance
 
     # From key ratios it gets Revenue, Gross Margin, Operating Income, Operating Margin and Net Income.
+    def open_income(self):
+        df_income = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_Income.cvs', delimiter=',', header=1, skip_blank_lines=True, index_col=[0], error_bad_lines=False)
+        df_income.fillna('*', inplace=True)
+        return df_income
+
     def get_income(self):
-        ### Reads a company's KeyRatios.cvs to find their revenue, gross margin, operating income, operating margin and net income. This gets returns as multiple variables. Each variable is a pandas data series. ###
+        # Reads a company's KeyRatios.cvs to find their revenue, gross margin, operating income, operating margin and net income. This gets returns as multiple variables. Each variable is a pandas data series.
         df_revenue = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=0, skip_blank_lines=True, index_col=[0], skiprows=range(0, 2), nrows=5)
         df_revenue.fillna('*', inplace=True)
         revenue = df_revenue.iloc[0]
@@ -86,50 +106,55 @@ class Stock(object):
         free_cash_flow_per_share = df_financials.iloc[13]
         return eps, payout_ratio, book_value_per_share, free_cash_flow, free_cash_flow_per_share
 
+    def check_currency_match(self, ratio):
+        if self.stock_currency in ratio.name:  # check if stock price and EPS price are the same
+            price_matched = self.past_prices_close["Current"]
+
+        else:  # stock price and EPS price are the same, so we have to get the exchange rate and calculate it.
+            if "EUR" in ratio.name:
+                to_currency = "EUR"
+            elif "USD" in ratio.name:
+                to_currency = "USD"
+            elif "GBP" in ratio.name:
+                to_currency = "GBP"
+            elif "SEK" in ratio.name:
+                to_currency = "SEK"
+            else:
+                price_matched = "*"
+                return price_matched
+
+            def update_currency(currency_data):  # updates currency and returns current fx
+                fx_data = urllib.request.urlopen(f'https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={self.stock_currency}&to_currency={to_currency}&apikey={APIKEY}')
+                fx_data = json.loads(fx_data.read())
+                fx = float(fx_data["Realtime Currency Exchange Rate"]['5. Exchange Rate'])
+                currency_data[f"{self.stock_currency}to{to_currency}"] = {"Rate": fx, "updated": self.today}
+                with open('data/pickles/currencies.pickle', 'wb') as f:   # save exchange rate, so we don't have to get it every time.
+                    pickle.dump(currency_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+                return fx
+
+            if os.path.isfile("data/pickles/currencies.pickle"):  # check data for currency rate.
+                currencies = pickle.load(open('data/pickles/currencies.pickle', 'rb'))
+                if f"{self.stock_currency}to{to_currency}" in currencies:  # check if we have for what we need now.
+                    days_since_update = self.today - currencies[f"{self.stock_currency}to{to_currency}"]["updated"]
+                    if days_since_update > dt.timedelta(5):  # check if the data is too old (5 day) to be used reliably
+                        fx = update_currency(currencies)
+                    else:
+                        fx = currencies[f"{self.stock_currency}to{to_currency}"]["Rate"]
+                else:
+                    fx = update_currency(currencies)
+            else:  # if the file doesn't exist then let's create it.
+                currencies = {}
+                fx = update_currency(currencies)
+            # going from stock_currency (DKK) to (mostly EUR or USD)
+            price_matched = self.past_prices_close["Current"] * fx
+        return price_matched
+
     # Calculates P/E ratio: Current price / EPS(ttm)
     def calc_pe_ratio(self, eps):
         # Returns the P/E ratio by getting current price and dividing it with most recent EPS(TTM)
-        def check_currency_match():
-            if self.stock_currency in eps.name:  # check if stock price and EPS price are the same
-                price_matched = self.past_prices_close["Current"]
-
-            else:  # stock price and EPS price are the same, so we have to get the exchange rate and calculate it.
-                if "EUR" in eps.name:
-                    to_currency = "EUR"
-                elif "USD" in eps.name:
-                    to_currency = "USD"
-                else:
-                    price_matched = "*"
-                    return price_matched
-
-                def update_currency(currency_data):  # updates currency and returns current fx
-                    fx_data = urllib.request.urlopen(f'https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={self.stock_currency}&to_currency={to_currency}&apikey={APIKEY}')
-                    fx_data = json.loads(fx_data.read())
-                    fx = float(fx_data["Realtime Currency Exchange Rate"]['5. Exchange Rate'])
-                    currency_data[f"{self.stock_currency}to{to_currency}"] = {"Rate": fx, "updated": self.today}
-                    with open('data/pickles/currencies.pickle', 'wb') as f:   # save exchange rate, so we don't have to get it every time.
-                        pickle.dump(currency_data, f, protocol=pickle.HIGHEST_PROTOCOL)
-                    return fx
-
-                if os.path.isfile("data/pickles/currencies.pickle"):  # check data for currency rate.
-                    currencies = pickle.load(open('data/pickles/currencies.pickle', 'rb'))
-                    if f"{self.stock_currency}to{to_currency}" in currencies:  # check if we have for what we need now.
-                        days_since_update = self.today - currencies[f"{self.stock_currency}to{to_currency}"]["updated"]
-                        if days_since_update > dt.timedelta(5):  # check if the data is too old (5 day) to be used reliably
-                            fx = update_currency(currencies)
-                        else:
-                            fx = currencies[f"{self.stock_currency}to{to_currency}"]["Rate"]
-                    else:
-                        fx = update_currency(currencies)
-                else:  # if the file doesn't exist then let's create it.
-                    currencies = {}
-                    fx = update_currency(currencies)
-                # going from stock_currency (DKK) to (mostly EUR or USD)
-                price_matched = self.past_prices_close["Current"] * fx
-            return price_matched
         if self.past_prices_close is not '*':
             if eps[-1] is not '*':   # if EPS or current price does not exist for that year it will return error value.
-                price_matched = check_currency_match()
+                price_matched = self.check_currency_match(eps)
                 if price_matched != "*":
                     pe = price_matched / float(eps[-1])
                 else:
@@ -141,12 +166,15 @@ class Stock(object):
         else:
             pe = "*"
         return pe
-    # Calculates the debt ratio: total liabilities / total assets
 
+    # Calculates the debt ratio: total liabilities / total assets
     def calc_debt_ratio(self):
         assets, liabilities = self.get_balance()
-        debt_ratio = liabilities / assets
-        return debt_ratio
+        try:
+            debt_ratio = liabilities / assets
+            return debt_ratio
+        except ZeroDivisionError:
+            return "*"
 
     # Calculates the company's Enterprise value: market cap + total borrowing - cash
     def calc_enterprise_value(self):
@@ -162,12 +190,12 @@ class Stock(object):
         enterprise_value = marketcap + short_term_debt + long_term_debt - cash
         return enterprise_value
 
-    # From key ratios get growth in revenue and net income.
     def calc_avg_volume(self, n):  # n = number of days for avg period
         try:
             df_price = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
         except FileNotFoundError:
             return '*'
+        pp(df_price)
         df_price['timestamp'] = pd.to_datetime(df_price['timestamp'])
         df_price.set_index('timestamp', inplace=True)
 
@@ -287,9 +315,22 @@ class Stock(object):
             else:
                 financials_vals.append(val)  # append those that are not only nan values.
 
-        # P/E ratio
-        pe = self.calc_pe_ratio(eps)
         return rev_growth_vals, inc_growth_vals, efficiency_vals, financials_vals, profitability_vals, cashflow_vals, liquidity_vals
+
+    def get_valuation_ratios(self):  # right now it only gets the current ratio using the current price. Later I want to add historical as well.
+        df_financials = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=2, skip_blank_lines=True, index_col=[0], nrows=15)
+        df_financials.fillna('*', inplace=True)
+        eps = df_financials.iloc[5]
+        pe = self.calc_pe_ratio(eps)
+        valuation_vals_unsorted = [pe]
+        valuation_vals = []
+        for val in valuation_vals_unsorted:  # Do not add value if only NaN values.
+            if val == "*":
+                pass
+            else:
+                valuation_vals.append(val)  # append those that are not only nan values.
+        # get P/E, dividend yield, price / free cash flow per share, price to book value, price to tangible book value, PEG, price to sales, price to cash flow
+        return valuation_vals
 
     def get_current_price(self):
         try:
@@ -306,11 +347,28 @@ class Stock(object):
         time_ago = self.today - dt.timedelta(days=time)
         return time_ago
 
+    # def get_price_specific_date(self, date):  # put in a date and it will return the price on that date if market is closed on that date, we don't have the data and get the most recent before that.
+    #     try:
+    #         df_price = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
+    #     except FileNotFoundError:
+    #         return '*'  # maybe we should try download it again.
+
     def historical_stock_price_close(self):
-        try:
-            df_price = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
-        except FileNotFoundError:
-            return '*'
+        if self.use_data == "daily":
+            try:
+                df_price = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_DailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
+            except FileNotFoundError:
+                return '*'  # maybe we should try download it again.
+            df_price_close = df_price['close']
+        elif self.use_data == "adj":
+            try:
+                df_price = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
+            except FileNotFoundError:
+                return '*'  # maybe we should try download it again.
+            try:
+                df_price_close = df_price['adjusted_close']
+            except KeyError:
+                return "*"
         df_price['timestamp'] = pd.to_datetime(df_price['timestamp'])
         df_price.set_index('timestamp', inplace=True)
         past_prices_close = {}  # saving prices in a dict
@@ -319,7 +377,8 @@ class Stock(object):
         if price_latest == 0:
             attempt = 1
             while price_latest == 0 and attempt < 10:  # if market is closed this day go to latest open day.
-                price_latest = (df_price['adjusted_close'][attempt])
+                # price_latest = (df_price['adjusted_close'][attempt])
+                price_latest = df_price_close[attempt]
                 attempt += 1
             if attempt == 10:
                 price_latest = 'NaN'  # there is an error with the data.
@@ -369,10 +428,11 @@ class Stock(object):
         # create a pickle for each category of key ratios.
         # Revenue growth ratios:
         stock_id = [self.name, self.isin, self.sector, self.stock_currency]
-        categories = {"rev_growth_data": rev_growth_vals, "inc_growth_data": inc_growth_vals}
-        # categories = {"rev_growth_data": rev_growth_vals, "inc_growth_data": inc_growth_vals, "efficiency_data": efficiency_vals, "financials_data": financials_vals, "profitability_data": profitability_vals, "cashflow_data": cashflow_vals, "liquidity_data": liquidity_vals}
+        # categories = {"rev_growth_data": rev_growth_vals, "inc_growth_data": inc_growth_vals}
+        categories = {"rev_growth_data": rev_growth_vals, "inc_growth_data": inc_growth_vals, "efficiency_data": efficiency_vals, "financials_data": financials_vals, "profitability_data": profitability_vals, "cashflow_data": cashflow_vals, "liquidity_data": liquidity_vals}
 
         for pickle_name, category_vals in categories.items():
+                # check if the value exists
             for ratio in category_vals:
                 if ratio[-1] != "*":  # if the TTM data does not exist, we use the most recent year.
                     ratio_value = ratio[-1]
@@ -406,129 +466,8 @@ class Stock(object):
                                 with open(f'data/pickles/{pickle_name}.pickle', 'wb') as f:
                                     pickle.dump(old_data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-def calculate_average_keyratios():  # calculates average key ratios for the whole market and each sector.
-    # create pickle file called average_keyratios.pickle where all of the average key ratios are saved
-
-    if not os.path.isfile("data/pickles/average_keyratios.pickle"):  # if the file doesn't exist then let's create it.
-        average_keyratios = {}
-    else:
-        average_keyratios = pickle.load(open("data/pickles/average_keyratios.pickle", "rb"))
-
-    if not os.path.isfile("data/pickles/sector_average_keyratios.pickle"):  # if the file doesn't exist then let's create it.
-        sector_average_keyratios = {}
-    else:
-        sector_average_keyratios = pickle.load(open("data/pickles/sector_average_keyratios.pickle", "rb"))
-
-    for root, dirs, files in os.walk("data/pickles/"):
-        for file in files:
-            if "_data" in file:
-                old_data = pickle.load(open(f'data/pickles/{file}', "rb"))
-                ratio_category = file[:-7]
-                for ratio, values in old_data.items():
-                    sum_values = 0
-                    n = 0
-                    for company_ticker, value in values.items():
-                        sum_values += Decimal(str(value[0]).replace(",", "."))
-                        n += 1
-                        sector_name = value[1][2]
-                        if sector_name in sector_average_keyratios:  # if the sector's name is in the data then store the data in there, else create a new key for the sector
-                            if ratio_category in sector_average_keyratios[sector_name]:  # if the ratio category exists
-                                if ratio in sector_average_keyratios[sector_name][ratio_category]:  # if the ratio exists then store the data in there
-                                    sector_average_keyratios[sector_name][ratio_category][ratio]["values"].update({company_ticker: str(value[0]).replace(",", ".")})
-                                else:  # the ratio is not in the data.
-                                    sector_average_keyratios[sector_name][ratio_category].update({ratio: {"values": {company_ticker: str(value[0]).replace(",", ".")}}})
-                            else:  # the ratio category is not in the data
-                                sector_average_keyratios[sector_name].update({ratio_category: {ratio: {"values": {company_ticker: str(value[0]).replace(",", ".")}}}})
-                        else:  # sector's name is not in the data, so let's add it.
-                            sector_average_keyratios.update({sector_name: {ratio_category: {ratio: {"values": {company_ticker: str(value[0]).replace(",", ".")}}}}})
-
-                    avg_ratio = float(sum_values / n)  # calculating market avg key ratios
-                    if ratio_category in average_keyratios:  # if the category does not already exist in the file then add it
-                        average_keyratios[ratio_category].update({ratio: [avg_ratio, n]})
-                    else:
-                        average_keyratios.update({ratio_category: {ratio: [avg_ratio, n]}})
-
-    with open('data/pickles/average_keyratios.pickle', 'wb') as f:  # saving market averages
-        pickle.dump(average_keyratios, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-    sector_average_keyratios = duplicate_data_sector(sector_average_keyratios)
-
-    for sector in sector_average_keyratios:
-        for category in sector_average_keyratios[sector]:
-            for ratio in sector_average_keyratios[sector][category]:
-                sum_values = 0
-                n = 0
-                for ticker, value in sector_average_keyratios[sector][category][ratio]["values"].items():
-                    sum_values += Decimal(value)
-                    n += 1
-                avg_ratio = float(sum_values / n)  # calculating sector avgs
-                sector_average_keyratios[sector][category][ratio].update({"results": [avg_ratio, n]})
-    pp(sector_average_keyratios)
-    with open('data/pickles/sector_average_keyratios.pickle', 'wb') as f:  # saving sector averages
-        pickle.dump(sector_average_keyratios, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-def duplicate_data_sector(sector_average_keyratios):  # check if a company's data is in multiple sectors. (this will happen if a company has changed sectors)
-    universe = pickle.load(open('data/pickles/universe_companies.pickle', 'rb'))
-    delete_list = list()
-    for universe_ticker, universe_values in universe.items():
-        for sector in sector_average_keyratios:
-            for category in sector_average_keyratios[sector]:
-                for ratio in sector_average_keyratios[sector][category]:
-                    for ticker, value in sector_average_keyratios[sector][category][ratio]["values"].items():
-                        if ticker.upper() == universe_ticker.upper() and sector.upper() != universe_values[3].upper():  # if company is in this sectors data and company's sector is not the same the delete the data
-                            delete_list.append([ticker, ratio, category, sector])
-                            pp(delete_list)
-    for delete_info in delete_list:
-        sector_average_keyratios[delete_info[3]][delete_info[2]][delete_info[1]]["values"].pop(delete_info[0])
-        if not bool(sector_average_keyratios[delete_info[3]][delete_info[2]][delete_info[1]]["values"]):  # if this is the only value in "values" key delete the whole ratio as the data doesn't exist anymore and should the average should not be calculated.
-            sector_average_keyratios[delete_info[3]][delete_info[2]].pop(delete_info[1])
-        if not bool(sector_average_keyratios[delete_info[3]][delete_info[2]]):  # if there's no values in a category then the category should be deleted.
-            sector_average_keyratios[delete_info[3]].pop(delete_info[2])
-        if not bool(sector_average_keyratios[delete_info[3]]):  # if there's no values in sector then the sector should be deleted.
-            sector_average_keyratios.pop(delete_info[3])
-    pp(sector_average_keyratios)
-    return sector_average_keyratios
-
-def get_all_keyratios_avgs():
-    print(f"Calculating all key ratios average for both market and each sector at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
-    universe = pickle.load(open('data/pickles/universe_companies.pickle', 'rb'))
-    for ticker, values in universe.items():
-        stock = Stock(ticker, values[1], values[0], values[3], values[2])  # ticker, name, isin, sector, stock_currency
-        stock.save_keyratios()
-    calculate_average_keyratios()
-    print(f"Finished calculating key ratios averages at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
-
 
 if __name__ == '__main__':
     start = time.time()
-
-    stocks = [Stock('vws.cph', "name", "isin", "Health Care", "DKK")
-              # Stock('MAERSK-B.cph', "name", "isin", "Health Care", "DKK"),
-              # Stock('sif.cph', "name", "ISIN", "Health Care", "DKK"),
-              # Stock('sif.cph', "name", "ISIN", "Health Care", "DKK"),
-              # Stock('sif.cph', "name", "ISIN", "Health Care", "DKK"),
-              # Stock('sif.cph', "name", "ISIN", "Health Care", "DKK"),
-              # Stock('sif.cph', "name", "ISIN", "Health Care", "DKK"),
-              # Stock('sif.cph', "name", "ISIN", "Health Care", "DKK"),
-              # Stock('sif.cph', "name", "ISIN", "Health Care", "DKK"),
-              # Stock('sif.cph', "name", "ISIN", "Health Care", "DKK"),
-              # Stock('sif.cph', "name", "ISIN", "Health Care", "DKK"),
-              # Stock('sif.cph', "name", "ISIN", "Health Care", "DKK"),
-              # Stock('sif.cph', "name", "ISIN", "Health Care", "DKK"),
-              # Stock('sif.cph', "name", "ISIN", "Health Care", "DKK"),
-              # Stock('sif.cph', "name", "ISIN", "Health Care", "DKK")
-              ]
-    for stock in stocks:
-        eps, payout_ratio, book_value_per_share, free_cash_flow, free_cash_flow_per_share = stock.get_financials()
-        print(stock.calc_pe_ratio(eps))
-        # stock.save_keystats()
-    # universe = pickle.load(open('data/pickles/universe_companies.pickle', 'rb'))
-    # for ticker, values in universe.items():
-    #     stock = Stock(ticker, values[1], values[0], values[3], values[2])  # ticker, name, isin, sector, stock_currency
-    #     stock.save_keyratios()
-    # calculate_average_keyratios()
-    # print("999", ratios)
-    # calc_average_keyratios()
-    # x.get_enterprise_value()
     end = time.time()
     print('time: ', end - start)

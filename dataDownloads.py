@@ -6,9 +6,11 @@ import pandas as pd
 import time
 import sys
 import shutil
-from usedata import get_all_keyratios_avgs
-from settings import APIKEY
-
+from decimal import Decimal
+import usedata
+import urllib.request
+from settings import APIKEY, APIKEY2, APIKEY3
+import pp
 # The list of companies on Nasdaq Copenhagen. Should be updated once in a while to get changes.
 def save_nasdaqcph_companies():
     # getting list of all the listed companies
@@ -174,14 +176,64 @@ def check_errors():
     print(f"Finished error checking on {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
 
 def download_prices(ticker):
-    try:
+    print(f"Downloading stock prices for {ticker}")
+    try:  # try getting the full dataset (in new API update this almost never works anymore)
         df = pd.read_csv(f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={ticker}&apikey={APIKEY}&datatype=csv&outputsize=full')
-    except urllib.error.HTTPError:
-        time.sleep(5)
+    except urllib.error.URLError:  # if there's a request error let's try again
+        df = pd.read_csv(f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={ticker}&apikey={APIKEY2}&datatype=csv&outputsize=full')
+    if "Error" in df.iloc[0][0] or "Note" in df.iloc[0][0]:  # if there's an error in the returned data then let's try one more time.
+        # let's try again
+        time.sleep(1)
         df = pd.read_csv(f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={ticker}&apikey={APIKEY}&datatype=csv&outputsize=full')
-    # df = df[(df.close != 0)]  # drop rows with an error.
-    # print(df)
-    df.to_csv(f'data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs')  # Save the data
+        if "Error" in df.iloc[0][0] or "Note" in df.iloc[0][0]:  # There's an error again, so Let's get the compact data (last 100 days) instead and then add it on top of the existing historical data.
+            time.sleep(5)
+            df = pd.read_csv(f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={ticker}&apikey={APIKEY2}&datatype=csv&outputsize=compact')
+            if "Error" in df.iloc[0][0] or "Note" in df.iloc[0][0]:  # There's an error, let's try again.
+                time.sleep(10)
+                df = pd.read_csv(f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={ticker}&apikey={APIKEY}&datatype=csv&outputsize=compact')
+                if "Error" in df.iloc[0][0] or "Note" in df.iloc[0][0]:  # Keeps up getting an error. We can't retrieve this data.
+                    print(f"giving up on getting data for {ticker}")
+            else:  # We got the compact data without an error, so let's now add the new data on top of the existing historical data.
+                try:
+                    df_old = pd.read_csv(f'data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
+                except FileNotFoundError:  # except if there's not already any data (probably a new company) then let's just get the last 100 days.
+                    df = pd.read_csv(f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={ticker}&apikey={APIKEY}&datatype=csv&outputsize=compact')
+                    df.set_index('timestamp', inplace=True)
+                    if "Error" in df.iloc[0][0] or "Note" in df.iloc[0][0]:  # if we can't get this data then pass
+                        return False
+                df_old.set_index('timestamp', inplace=True)
+                if "Unnamed: 0" in df_old.columns:
+                    df_old.drop("Unnamed: 0", axis=1, inplace=True)
+                last_date = df_old.index[0]
+                if df.index.name != "timestamp":
+                    df.set_index('timestamp', inplace=True)
+                merge_date = list(df.index).index(last_date)
+                new_data = df.iloc[:merge_date]
+                df = pd.concat([new_data, df_old])
+        else:  # There was no error and let's prepare the data by setting the index.
+            pp(df.head())
+            if df.index.name != "timestamp":
+                df.set_index('timestamp', inplace=True)
+    else:  # There was no error and let's prepare the data by setting the index.
+        pp(df)
+        if df.index.name != "timestamp":
+            df.set_index('timestamp', inplace=True)
+    pp(df.head())
+    df = df[(df.close != 0)]  # drop rows with errors
+    df.to_csv(f'data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs')  # Saving the data
+    return True
+
+def download_prices_alternative(ticker):
+    ticker_alternative = ticker.replace(".CPH", ".CO")
+    print(f"Getting prices for {ticker}")
+    df = pd.read_csv(f"https://api.worldtradingdata.com/api/v1/history?symbol={ticker_alternative}&api_token={APIKEY3}&sort_order=oldest&output=csv")
+    if "Error" in df.columns[0]:
+        return False
+    else:
+        df.columns = ['timestamp', 'open', 'close', 'high', 'low', 'volume']
+        df.set_index('timestamp', inplace=True)
+        df.to_csv(f'data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs')  # Saving the data
+        return True
 
 # Download financials for every company. Should be redownloaded once in a while to get latest.
 def download_company_financial_data():
@@ -193,7 +245,7 @@ def download_company_financial_data():
         n += 1
         company = CompanyFinancialData(key, value[0])  # ticker, isin. Creating a company object.
         company.download_all_financials()  # downloading the financials.
-        print("Finished downloading financial data for {key}. {n} out of {universe_size} at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
+        print(f"Finished downloading financial data for {key}. {n} out of {universe_size} at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
     print(f"finished getting downloading all financials on {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
 
 # Downloading stock prices for all companies (up to 20 years of daily prices)
@@ -202,18 +254,141 @@ def all_stock_prices():
     universe = pickle.load(open('data/pickles/universe_companies.pickle', 'rb'))
     n = 0
     universe_size = len(universe)
+    errors = []
     for key_ticker, value in universe.items():
         n += 1
-        download_prices(key_ticker)
-        print(f"Stock prices for {key_ticker} are finished downloading. {n} out of {universe_size} at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
-        time.sleep(12.1)  # max 5 requests every minute
+        if download_prices_alternative(key_ticker):
+            print(f"Stock prices for {key_ticker} are finished downloading. {n} out of {universe_size} at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
+        else:
+            print(f"Error getting stock prices for {key_ticker}")
+            errors.append(key_ticker)
+
+    for ticker in errors:
+        if download_prices_alternative(key_ticker):
+            print(f"Stock prices for {key_ticker} are finished downloading. {n} out of {universe_size} at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
+        else:
+            print(f"Error getting stock prices for {key_ticker}. Going to get it from another source.")
+            # Let's try using another API
+            if download_prices(key_ticker):
+                print(f"Stock prices for {key_ticker} are finished downloading. {n} out of {universe_size} at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
+                time.sleep(12)  # max 5 requests every minute
+            else:
+                print(f"can't get prices for {key_ticker}")
     print(f"All stocks prices updated on {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
 
-def setup():
-    save_nasdaqcph_companies()  # first this one to run
-    all_stock_prices()
-    download_company_financial_data()
-    get_all_keyratios_avgs()  # last to run after all the others are finished
+def calculate_average_keyratios():  # calculates average key ratios for the whole market and each sector.
+    # create pickle file called average_keyratios.pickle where all of the average key ratios are saved
+
+    if not os.path.isfile("data/pickles/average_keyratios.pickle"):  # if the file doesn't exist then let's create it.
+        average_keyratios = {}
+    else:
+        average_keyratios = pickle.load(open("data/pickles/average_keyratios.pickle", "rb"))
+
+    if not os.path.isfile("data/pickles/sector_average_keyratios.pickle"):  # if the file doesn't exist then let's create it.
+        sector_average_keyratios = {}
+    else:
+        sector_average_keyratios = pickle.load(open("data/pickles/sector_average_keyratios.pickle", "rb"))
+
+    for root, dirs, files in os.walk("data/pickles/"):
+        for file in files:
+            if "_data" in file:
+                old_data = pickle.load(open(f'data/pickles/{file}', "rb"))
+                ratio_category = file[:-7]
+                for ratio, values in old_data.items():
+                    sum_values = 0
+                    n = 0
+                    for company_ticker, value in values.items():
+                        sum_values += Decimal(str(value[0]).replace(",", "."))
+                        n += 1
+                        sector_name = value[1][2]
+                        if sector_name in sector_average_keyratios:  # if the sector's name is in the data then store the data in there, else create a new key for the sector
+                            if ratio_category in sector_average_keyratios[sector_name]:  # if the ratio category exists
+                                if ratio in sector_average_keyratios[sector_name][ratio_category]:  # if the ratio exists then store the data in there
+                                    sector_average_keyratios[sector_name][ratio_category][ratio]["values"].update({company_ticker: str(value[0]).replace(",", ".")})
+                                else:  # the ratio is not in the data.
+                                    sector_average_keyratios[sector_name][ratio_category].update({ratio: {"values": {company_ticker: str(value[0]).replace(",", ".")}}})
+                            else:  # the ratio category is not in the data
+                                sector_average_keyratios[sector_name].update({ratio_category: {ratio: {"values": {company_ticker: str(value[0]).replace(",", ".")}}}})
+                        else:  # sector's name is not in the data, so let's add it.
+                            sector_average_keyratios.update({sector_name: {ratio_category: {ratio: {"values": {company_ticker: str(value[0]).replace(",", ".")}}}}})
+
+                    avg_ratio = float(sum_values / n)  # calculating market avg key ratios
+                    if ratio_category in average_keyratios:  # if the category does not already exist in the file then add it
+                        average_keyratios[ratio_category].update({ratio: [avg_ratio, n]})
+                    else:
+                        average_keyratios.update({ratio_category: {ratio: [avg_ratio, n]}})
+
+    with open('data/pickles/average_keyratios.pickle', 'wb') as f:  # saving market averages
+        pickle.dump(average_keyratios, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    sector_average_keyratios = duplicate_data_sector(sector_average_keyratios)
+
+    for sector in sector_average_keyratios:
+        for category in sector_average_keyratios[sector]:
+            for ratio in sector_average_keyratios[sector][category]:
+                sum_values = 0
+                n = 0
+                for ticker, value in sector_average_keyratios[sector][category][ratio]["values"].items():
+                    sum_values += Decimal(value)
+                    n += 1
+                avg_ratio = float(sum_values / n)  # calculating sector avgs
+                sector_average_keyratios[sector][category][ratio].update({"results": [avg_ratio, n]})
+    pp(sector_average_keyratios)
+    with open('data/pickles/sector_average_keyratios.pickle', 'wb') as f:  # saving sector averages
+        pickle.dump(sector_average_keyratios, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+def duplicate_data_sector(sector_average_keyratios):  # check if a company's data is in multiple sectors. (this will happen if a company has changed sectors)
+    universe = pickle.load(open('data/pickles/universe_companies.pickle', 'rb'))
+    delete_list = list()
+    for universe_ticker, universe_values in universe.items():
+        for sector in sector_average_keyratios:
+            for category in sector_average_keyratios[sector]:
+                for ratio in sector_average_keyratios[sector][category]:
+                    for ticker, value in sector_average_keyratios[sector][category][ratio]["values"].items():
+                        if ticker.upper() == universe_ticker.upper() and sector.upper() != universe_values[3].upper():  # if company is in this sectors data and company's sector is not the same the delete the data
+                            delete_list.append([ticker, ratio, category, sector])
+                            pp(delete_list)
+    for delete_info in delete_list:
+        sector_average_keyratios[delete_info[3]][delete_info[2]][delete_info[1]]["values"].pop(delete_info[0])
+        if not bool(sector_average_keyratios[delete_info[3]][delete_info[2]][delete_info[1]]["values"]):  # if this is the only value in "values" key delete the whole ratio as the data doesn't exist anymore and should the average should not be calculated.
+            sector_average_keyratios[delete_info[3]][delete_info[2]].pop(delete_info[1])
+        if not bool(sector_average_keyratios[delete_info[3]][delete_info[2]]):  # if there's no values in a category then the category should be deleted.
+            sector_average_keyratios[delete_info[3]].pop(delete_info[2])
+        if not bool(sector_average_keyratios[delete_info[3]]):  # if there's no values in sector then the sector should be deleted.
+            sector_average_keyratios.pop(delete_info[3])
+    return sector_average_keyratios
+
+# updates the pickle files for all stocks and then updates the calculated average market and sector of each key ratio.
+def get_all_keyratios_avgs():
+    print(f"Calculating all key ratios average for both market and each sector at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
+    universe = pickle.load(open('data/pickles/universe_companies.pickle', 'rb'))
+    for ticker, values in universe.items():
+        stock = usedata.Stock(ticker, values[1], values[0], values[3], values[2])  # ticker, name, isin, sector, stock_currency
+        stock.save_keyratios()
+    calculate_average_keyratios()
+    print(f"Finished calculating key ratios averages at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
+
+# def save_large_pickles():
+#     # Lets make the overview file first. This includes Ticket, name, sector, market cap(later), market(later) price, P / E, volume, 52w low, 52w high
+#     universe = pickle.load(open('data/pickles/universe_companies.pickle', 'rb'))
+#     data = []
+#     for ticker, values in universe.items()
+#         stock = usedata.Stock(ticker, values[1], values[0], values[3], values[2])
+
+#         # price =
+#         company_data = [ticker, values[1], values[3]]
+
+#         data.append(company_data)
+
+#     df_overview = pd.DataFrame(data, columns=["ticker", "name", "sector", "price", "P/E", "volume (30 day avg)", "52w low", "52w high"])
+
+    # company
+
+    # now let's take all of the growth pickles and put them together to one.
+
+    # Now let's take all of the financial ratios and put them to one
+
+    # Now let's take all of the valuation ratios and put them to one
 
 
 if __name__ == "__main__":
@@ -229,11 +404,12 @@ if __name__ == "__main__":
     else:
         if args[1] == "update financials":
             print("updating financial data for all companies")
-            save_nasdaqcph_companies()  # updating the list of companies on the market.
-            # # **** Downloading the financials for every company. Should be redownloaded once in a while to get latest.
-            download_company_financial_data()  # if True then update all, otherwise only new companies in the market.
-            # Check for errors and retry all companies with errors
-            check_errors()  # check how many errors still exist after trying again. Files that still error don't exist.
+            # save_nasdaqcph_companies()  # updating the list of companies on the market.
+            # # # **** Downloading the financials for every company. Should be redownloaded once in a while to get latest.
+            # download_company_financial_data()  # if True then update all, otherwise only new companies in the market.
+            # # Check for errors and retry all companies with errors
+            # check_errors()  # check how many errors still exist after trying again. Files that still error don't exist.
+            get_all_keyratios_avgs()  # updates the pickle files for all stocks and then updates the calculated average market and sector of each key ratio.
 
         elif args[1] == "update prices":
             # **** Getting the historical prices of all stocks.
@@ -245,7 +421,10 @@ if __name__ == "__main__":
             save_nasdaqcph_companies()  # updating the list of companies on the market.
         elif args[1] == "setup":
             print(f"setting up application for first time use at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
-            setup()
+            save_nasdaqcph_companies()  # first this one to run
+            all_stock_prices()
+            download_company_financial_data()
+            get_all_keyratios_avgs()  # last to run after all the others are finished
             print(f"finished setting up application at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
         elif args[1] == "test":
             print("testing new function on a single company")
@@ -253,6 +432,11 @@ if __name__ == "__main__":
             isin = "DK0010268606"
             company = CompanyFinancialData(ticker, isin)  # ticker, isin. Creating a company object.
             company.download_all_financials()  # downloading the financials.
+        elif "ticker" in args[1]:  # updates latest stock prices for specific company
+            ticker = args[1][7:].upper()
+            print(ticker)
+            # download_prices(ticker)
+            download_prices_alternative(ticker)
         else:
             print('Use an argument to run specific functions.')
             print('"update financials" downloads the financial data for all companies.')
@@ -260,7 +444,12 @@ if __name__ == "__main__":
             print('"update universe" downloads the NASDAQ Copenhagen.')
             print('"setup" for first time use. Downloading all of the above')
             print('"test" for testing new functions')
+            print("'ticker {ticker}' for updating prices for ticker")
+
     end = time.time()
     run_time_s = end - start
     run_time_m = run_time_s / 60
     print(f'time: {run_time_s} Seconds or {run_time_m} Minutes')
+
+
+# 2019-06-13 last date
