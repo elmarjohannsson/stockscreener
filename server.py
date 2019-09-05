@@ -42,4 +42,3 @@ app = dash.Dash(meta_tags=[
 ])
 
 app.config['suppress_callback_exceptions'] = True
-server = app.server

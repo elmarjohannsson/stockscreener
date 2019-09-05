@@ -3,7 +3,7 @@ import dash_html_components as html
 from dash.dependencies import Input, Output
 import pickle
 import os
-from server import app, server
+from server import app
 from apps import company, screener
 from dataDownloads import save_nasdaqcph_companies
 # creating the layout
@@ -39,7 +39,7 @@ def get_app_layout():
     return layout
 
 
-server = server
+server = app.server
 
 app.layout = get_app_layout()
 
