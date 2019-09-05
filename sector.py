@@ -1,6 +1,6 @@
 import pandas as pd
 import pickle
-import statistics as st
+# import statistics as st
 
 class prepare_data(object):
     def __init__(self, ticker, isin, name, sector, icb):

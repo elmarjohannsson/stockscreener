@@ -9,7 +9,7 @@ from server import app
 import requests
 import pandas as pd
 import os
-import pp
+# import pp
 import millify
 import usedata
 import components

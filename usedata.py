@@ -2,7 +2,7 @@ import pandas as pd
 import pickle
 import os
 import datetime as dt
-import pp
+# import pp
 import time
 import urllib.request
 import json
@@ -195,7 +195,7 @@ class Stock(object):
             df_price = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
         except FileNotFoundError:
             return '*'
-        pp(df_price)
+        # pp(df_price)
         df_price['timestamp'] = pd.to_datetime(df_price['timestamp'])
         df_price.set_index('timestamp', inplace=True)
 

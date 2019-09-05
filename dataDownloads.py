@@ -10,7 +10,7 @@ from decimal import Decimal
 import usedata
 import urllib.request
 from settings import APIKEY, APIKEY2, APIKEY3
-import pp
+# import pp
 # The list of companies on Nasdaq Copenhagen. Should be updated once in a while to get changes.
 def save_nasdaqcph_companies():
     # getting list of all the listed companies
