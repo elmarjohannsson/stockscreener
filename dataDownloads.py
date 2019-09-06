@@ -211,16 +211,13 @@ def download_prices(ticker):
                 new_data = df.iloc[:merge_date]
                 df = pd.concat([new_data, df_old])
         else:  # There was no error and let's prepare the data by setting the index.
-            pp(df.head())
             if df.index.name != "timestamp":
                 df.set_index('timestamp', inplace=True)
     else:  # There was no error and let's prepare the data by setting the index.
-        pp(df)
         if df.index.name != "timestamp":
             df.set_index('timestamp', inplace=True)
-    pp(df.head())
     df = df[(df.close != 0)]  # drop rows with errors
-    df.to_csv(f'data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs')  # Saving the data
+    df.to_csv(f'{PATH}data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs')  # Saving the data
     return True
 
 def download_prices_alternative(ticker):
@@ -232,7 +229,7 @@ def download_prices_alternative(ticker):
     else:
         df.columns = ['timestamp', 'open', 'close', 'high', 'low', 'volume']
         df.set_index('timestamp', inplace=True)
-        df.to_csv(f'data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs')  # Saving the data
+        df.to_csv(f'{PATH}data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs')  # Saving the data
         return True
 
 # Download financials for every company. Should be redownloaded once in a while to get latest.
@@ -346,7 +343,6 @@ def duplicate_data_sector(sector_average_keyratios):  # check if a company's dat
                     for ticker, value in sector_average_keyratios[sector][category][ratio]["values"].items():
                         if ticker.upper() == universe_ticker.upper() and sector.upper() != universe_values[3].upper():  # if company is in this sectors data and company's sector is not the same the delete the data
                             delete_list.append([ticker, ratio, category, sector])
-                            pp(delete_list)
     for delete_info in delete_list:
         sector_average_keyratios[delete_info[3]][delete_info[2]][delete_info[1]]["values"].pop(delete_info[0])
         if not bool(sector_average_keyratios[delete_info[3]][delete_info[2]][delete_info[1]]["values"]):  # if this is the only value in "values" key delete the whole ratio as the data doesn't exist anymore and should the average should not be calculated.
