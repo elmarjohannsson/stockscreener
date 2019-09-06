@@ -64,7 +64,11 @@ def save_nasdaqcph_companies():
 
     # checking for companies that are not in the market anymore, so their folders should not exist anymore.
     for root, dirs, files in os.walk(f'{PATH}/data/CompanyData/'):
-        ticker = root[17:]
+        ticker = root
+        while "/" in ticker:
+            index = ticker.find("/") + 1
+            ticker = ticker[index:]
+        print(ticker)
         if ticker not in companies:
             if ticker != '':
                 shutil.rmtree(root)
