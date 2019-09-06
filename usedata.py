@@ -6,7 +6,7 @@ import datetime as dt
 import time
 import urllib.request
 import json
-from settings import APIKEY
+from settings import APIKEY, PATH
 
 class Stock(object):
     def __init__(self, ticker, name, isin, sector, stock_currency):
@@ -20,7 +20,7 @@ class Stock(object):
         self.past_prices_close = self.historical_stock_price_close()
 
     def most_recent_data(self):
-        if os.path.isfile(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs') and os.path.isfile(f'data/CompanyData/{self.ticker}/{self.ticker}_DailyPrices.cvs'):  # Finding the one with the most recent data
+        if os.path.isfile(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs') and os.path.isfile(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_DailyPrices.cvs'):  # Finding the one with the most recent data
             daily_adj_mtime = os.path.getmtime(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs')
             daily_mtime = os.path.getmtime(f'data/CompanyData/{self.ticker}/{self.ticker}_DailyPrices.cvs')
             if daily_mtime > daily_adj_mtime:
@@ -29,27 +29,27 @@ class Stock(object):
                 return "adj"
             else:
                 return "adj"
-        elif os.path.isfile(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs'):
+        elif os.path.isfile(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs'):
             return "adj"
-        elif os.path.isfile(f'data/CompanyData/{self.ticker}/{self.ticker}_DailyPrices.cvs'):
+        elif os.path.isfile(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_DailyPrices.cvs'):
             return "daily"
     # Opens the whole balance sheet file
 
     def open_balance(self):
         # Returns the company's balance sheet as a cvs file
-        df_balance = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_BalanceSheet.cvs', delimiter=',', header=1, skip_blank_lines=True, index_col=[0], error_bad_lines=False)
+        df_balance = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_BalanceSheet.cvs', delimiter=',', header=1, skip_blank_lines=True, index_col=[0], error_bad_lines=False)
         df_balance.fillna('*', inplace=True)
         return df_balance
 
     # From key ratios it gets Revenue, Gross Margin, Operating Income, Operating Margin and Net Income.
     def open_income(self):
-        df_income = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_Income.cvs', delimiter=',', header=1, skip_blank_lines=True, index_col=[0], error_bad_lines=False)
+        df_income = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_Income.cvs', delimiter=',', header=1, skip_blank_lines=True, index_col=[0], error_bad_lines=False)
         df_income.fillna('*', inplace=True)
         return df_income
 
     def get_income(self):
         # Reads a company's KeyRatios.cvs to find their revenue, gross margin, operating income, operating margin and net income. This gets returns as multiple variables. Each variable is a pandas data series.
-        df_revenue = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=0, skip_blank_lines=True, index_col=[0], skiprows=range(0, 2), nrows=5)
+        df_revenue = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=0, skip_blank_lines=True, index_col=[0], skiprows=range(0, 2), nrows=5)
         df_revenue.fillna('*', inplace=True)
         revenue = df_revenue.iloc[0]
         grossMargin = df_revenue.iloc[1]
@@ -69,7 +69,7 @@ class Stock(object):
     # Opens the cash flow statement
     def open_cashflow(self):
         # Returns the company's cash flow as a cvs file ###
-        cf_url = f'data/CompanyData/{self.ticker}/{self.ticker}_CashFlow.cvs'
+        cf_url = f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_CashFlow.cvs'
         # if cash flow is not empty then get it
         if not os.path.isfile(cf_url):
             df_cashflow = "*"
@@ -97,7 +97,7 @@ class Stock(object):
 
     # From Key ratios sheet it gets EPS, payout ratio, book value per share, free cash flow and free cash flow per share.
     def get_financials(self):  # Returns financial values by opening the company's key ratios sheet and searching for wanted values ####
-        df_financials = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=2, skip_blank_lines=True, index_col=[0], nrows=15)
+        df_financials = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=2, skip_blank_lines=True, index_col=[0], nrows=15)
         df_financials.fillna('*', inplace=True)
         eps = df_financials.iloc[5]
         payout_ratio = df_financials.iloc[7]
@@ -128,12 +128,12 @@ class Stock(object):
                 fx_data = json.loads(fx_data.read())
                 fx = float(fx_data["Realtime Currency Exchange Rate"]['5. Exchange Rate'])
                 currency_data[f"{self.stock_currency}to{to_currency}"] = {"Rate": fx, "updated": self.today}
-                with open('data/pickles/currencies.pickle', 'wb') as f:   # save exchange rate, so we don't have to get it every time.
+                with open(f'{PATH}/data/pickles/currencies.pickle', 'wb') as f:   # save exchange rate, so we don't have to get it every time.
                     pickle.dump(currency_data, f, protocol=pickle.HIGHEST_PROTOCOL)
                 return fx
 
-            if os.path.isfile("data/pickles/currencies.pickle"):  # check data for currency rate.
-                currencies = pickle.load(open('data/pickles/currencies.pickle', 'rb'))
+            if os.path.isfile(f"{PATH}/data/pickles/currencies.pickle"):  # check data for currency rate.
+                currencies = pickle.load(open(f'{PATH}/data/pickles/currencies.pickle', 'rb'))
                 if f"{self.stock_currency}to{to_currency}" in currencies:  # check if we have for what we need now.
                     days_since_update = self.today - currencies[f"{self.stock_currency}to{to_currency}"]["updated"]
                     if days_since_update > dt.timedelta(5):  # check if the data is too old (5 day) to be used reliably
@@ -192,7 +192,7 @@ class Stock(object):
 
     def calc_avg_volume(self, n):  # n = number of days for avg period
         try:
-            df_price = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
+            df_price = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
         except FileNotFoundError:
             return '*'
         # pp(df_price)
@@ -207,13 +207,13 @@ class Stock(object):
         return avg_volume
 
     def get_number_of_shares(self):
-        df_keyratios = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=2, skip_blank_lines=True, index_col=[0], nrows=10)
+        df_keyratios = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=2, skip_blank_lines=True, index_col=[0], nrows=10)
         shares = df_keyratios.loc["Shares Mil"]
         return shares
 
     def get_all_keyratios(self, result=''):
         try:
-            df_kr = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=0, skip_blank_lines=True, index_col=[0], skiprows=range(0, 20))
+            df_kr = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=0, skip_blank_lines=True, index_col=[0], skiprows=range(0, 20))
         except FileNotFoundError:
             return '*'
         df_kr.fillna('*', inplace=True)
@@ -318,7 +318,7 @@ class Stock(object):
         return rev_growth_vals, inc_growth_vals, efficiency_vals, financials_vals, profitability_vals, cashflow_vals, liquidity_vals
 
     def get_valuation_ratios(self):  # right now it only gets the current ratio using the current price. Later I want to add historical as well.
-        df_financials = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=2, skip_blank_lines=True, index_col=[0], nrows=15)
+        df_financials = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=2, skip_blank_lines=True, index_col=[0], nrows=15)
         df_financials.fillna('*', inplace=True)
         eps = df_financials.iloc[5]
         pe = self.calc_pe_ratio(eps)
@@ -334,7 +334,7 @@ class Stock(object):
 
     def get_current_price(self):
         try:
-            df_price = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
+            df_price = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
         except FileNotFoundError:
             return '*'
         df_price['timestamp'] = pd.to_datetime(df_price['timestamp'])
@@ -349,20 +349,20 @@ class Stock(object):
 
     # def get_price_specific_date(self, date):  # put in a date and it will return the price on that date if market is closed on that date, we don't have the data and get the most recent before that.
     #     try:
-    #         df_price = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
+    #         df_price = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
     #     except FileNotFoundError:
     #         return '*'  # maybe we should try download it again.
 
     def historical_stock_price_close(self):
         if self.use_data == "daily":
             try:
-                df_price = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_DailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
+                df_price = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_DailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
             except FileNotFoundError:
                 return '*'  # maybe we should try download it again.
             df_price_close = df_price['close']
         elif self.use_data == "adj":
             try:
-                df_price = pd.read_csv(f'data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
+                df_price = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
             except FileNotFoundError:
                 return '*'  # maybe we should try download it again.
             try:
@@ -446,24 +446,24 @@ class Stock(object):
                     }
                     data_dict = {ratio.name: data}
                     # save to the data pickle. If the pickle does not exist yet then create it.
-                    if not os.path.isfile(f"data/pickles/{pickle_name}.pickle"):  # if the file doesn't exist then let's create it.
+                    if not os.path.isfile(f"{PATH}/data/pickles/{pickle_name}.pickle"):  # if the file doesn't exist then let's create it.
                         with open(f"data/pickles/{pickle_name}.pickle", "wb") as f:
                             pickle.dump(data_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
                     else:  # if the pickle already exists, let's open it and store the data with it.
-                        old_data = pickle.load(open(f"data/pickles/{pickle_name}.pickle", "rb"))
+                        old_data = pickle.load(open(f"{PATH}/data/pickles/{pickle_name}.pickle", "rb"))
                         if ratio.name in old_data:  # if the key ratio already exists in the dict then update it. Else add the key ratio.
                             old_data[ratio.name].update(data)
                         else:
                             old_data.update(data_dict)
-                        with open(f'data/pickles/{pickle_name}.pickle', 'wb') as f:
+                        with open(f'{PATH}/data/pickles/{pickle_name}.pickle', 'wb') as f:
                             pickle.dump(old_data, f, protocol=pickle.HIGHEST_PROTOCOL)
                 else:  # the ratio for the most recent period does not exists, so let's check if the old data is in the pickle.
                     if os.path.isfile(f"data/pickles/{pickle_name}.pickle"):  # if the pickle exists
-                        old_data = pickle.load(open(f"data/pickles/{pickle_name}.pickle", "rb"))
+                        old_data = pickle.load(open(f"{PATH}/data/pickles/{pickle_name}.pickle", "rb"))
                         if ratio.name in old_data:
                             if self.ticker in old_data[ratio.name]:  # if the ratio for the specific company exists we delete the outdated data.
                                 del old_data[ratio.name][self.ticker]
-                                with open(f'data/pickles/{pickle_name}.pickle', 'wb') as f:
+                                with open(f'{PATH}/data/pickles/{pickle_name}.pickle', 'wb') as f:
                                     pickle.dump(old_data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 

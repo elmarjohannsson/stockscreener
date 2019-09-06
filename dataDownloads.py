@@ -9,7 +9,7 @@ import shutil
 from decimal import Decimal
 import usedata
 import urllib.request
-from settings import APIKEY, APIKEY2, APIKEY3
+from settings import APIKEY, APIKEY2, APIKEY3, PATH
 # import pp
 # The list of companies on Nasdaq Copenhagen. Should be updated once in a while to get changes.
 def save_nasdaqcph_companies():
@@ -44,24 +44,24 @@ def save_nasdaqcph_companies():
 
     # creating the directories if they don't exist
     if not os.path.isdir("data"):
-        os.mkdir("data")
+        os.mkdir(f"{PATH}/data")
     if not os.path.isdir("data/pickles"):
-        os.mkdir("data/pickles")
+        os.mkdir(f"{PATH}/data/pickles")
 
-    with open('data/pickles/universe_companies.pickle', 'wb') as f:   # Dictionary with all companies. key:ticker values:isin, name, currency, sector, icb
+    with open(f'{PATH}/data/pickles/universe_companies.pickle', 'wb') as f:   # Dictionary with all companies. key:ticker values:isin, name, currency, sector, icb
         pickle.dump(companies, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-    with open('data/pickles/search.pickle', 'wb') as f:  # list with lists containing name and ticker.
+    with open(f'{PATH}/data/pickles/search.pickle', 'wb') as f:  # list with lists containing name and ticker.
         pickle.dump(search, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     # making sure that every company has a directory for its data.
     for key, vals in companies.items():  # key will be the ticker name.
-        if not os.path.isdir(f'data/CompanyData/{key}/'):
-            os.makedirs(f'data/CompanyData/{key}/')
+        if not os.path.isdir(f'{PATH}/data/CompanyData/{key}/'):
+            os.makedirs(f'{PATH}/data/CompanyData/{key}/')
             print(f"dir for {key} has been made")
 
     # checking for companies that are not in the market anymore, so their folders should not exist anymore.
-    for root, dirs, files in os.walk('data/CompanyData/'):
+    for root, dirs, files in os.walk(f'{PATH}/data/CompanyData/'):
         ticker = root[17:]
         if ticker not in companies:
             if ticker != '':
@@ -79,34 +79,34 @@ class CompanyFinancialData(object):
         url = f'http://financials.morningstar.com/ajax/exportKR2CSV.html?t={self.isin}'
         referer = f"http://financials.morningstar.com/ratios/r.html?t={self.isin}"
         r = requests.get(url, headers={"referer": referer})
-        open(f'data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', 'wb').write(r.content)
+        open(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', 'wb').write(r.content)
         # Try until it works.
         tries = 0
-        while (os.stat(f'data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs').st_size == 0 and tries < 5):
+        while (os.stat(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs').st_size == 0 and tries < 5):
             try:
                 r = requests.get(url, timeout=1)
-                open(f'data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', 'wb').write(r.content)
+                open(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', 'wb').write(r.content)
                 tries += 1
             except requests.exceptions.ReadTimeout:
                 r = requests.get(url, timeout=1)
-                open(f'data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', 'wb').write(r.content)
+                open(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', 'wb').write(r.content)
                 tries += 1
 
     def get_income(self, period=12, number=3):
         url = f'http://financials.morningstar.com/ajax/ReportProcess4CSV.html?t={self.isin}&reportType=is&period={period}&dataType=A&order=asc&columnYear=5&number={number}'
         referer = f"http://financials.morningstar.com/income-statement/is.html?t={self.isin}"
         r = requests.get(url, headers={"referer": referer})
-        open(f'data/CompanyData/{self.ticker}/{self.ticker}_Income.cvs', 'wb').write(r.content)
+        open(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_Income.cvs', 'wb').write(r.content)
         # while error try until it works.
         tries = 0
-        while (os.stat(f'data/CompanyData/{self.ticker}/{self.ticker}_Income.cvs').st_size == 0 and tries < 5):
+        while (os.stat(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_Income.cvs').st_size == 0 and tries < 5):
             try:
                 r = requests.get(url, timeout=1)
-                open(f'data/CompanyData/{self.ticker}/{self.ticker}_Income.cvs', 'wb').write(r.content)
+                open(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_Income.cvs', 'wb').write(r.content)
                 tries += 1
             except requests.exceptions.ReadTimeout:
                 r = requests.get(url, timeout=1)
-                open(f'data/CompanyData/{self.ticker}/{self.ticker}_Income.cvs', 'wb').write(r.content)
+                open(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_Income.cvs', 'wb').write(r.content)
                 tries += 1
         # print(f'Income Statement for {self.ticker} finished')
 
@@ -114,17 +114,17 @@ class CompanyFinancialData(object):
         url = f'http://financials.morningstar.com/ajax/ReportProcess4CSV.html?t={self.isin}&reportType=bs&period={period}&dataType=A&order=asc&columnYear=5&number={number}'
         referer = f"http://financials.morningstar.com/balance-sheet/bs.html?t={self.isin}"
         r = requests.get(url, headers={"referer": referer})
-        open(f'data/CompanyData/{self.ticker}/{self.ticker}_BalanceSheet.cvs', 'wb').write(r.content)
+        open(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_BalanceSheet.cvs', 'wb').write(r.content)
         # while error try until it works.
         tries = 0
-        while (os.stat(f'data/CompanyData/{self.ticker}/{self.ticker}_BalanceSheet.cvs').st_size == 0 and tries < 5):
+        while (os.stat(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_BalanceSheet.cvs').st_size == 0 and tries < 5):
             try:
                 r = requests.get(url, timeout=1)
-                open(f'data/CompanyData/{self.ticker}/{self.ticker}_BalanceSheet.cvs', 'wb').write(r.content)
+                open(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_BalanceSheet.cvs', 'wb').write(r.content)
                 tries += 1
             except requests.exceptions.ReadTimeout:
                 r = requests.get(url, timeout=1)
-                open(f'data/CompanyData/{self.ticker}/{self.ticker}_BalanceSheet.cvs', 'wb').write(r.content)
+                open(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_BalanceSheet.cvs', 'wb').write(r.content)
                 tries += 1
         # print(f'Balance Sheet for {self.ticker} finished')
 
@@ -132,17 +132,17 @@ class CompanyFinancialData(object):
         url = f'http://financials.morningstar.com/ajax/ReportProcess4CSV.html?t={self.isin}&reportType=cf&period={period}&dataType=A&order=asc&columnYear=5&number={number}'
         referer = f"http://financials.morningstar.com/cash-flow/cf.html?t={self.isin}"
         r = requests.get(url, headers={"referer": referer})
-        open(f'data/CompanyData/{self.ticker}/{self.ticker}_CashFlow.cvs', 'wb').write(r.content)
+        open(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_CashFlow.cvs', 'wb').write(r.content)
         # while error until it works.
         tries = 0
-        while (os.stat(f'data/CompanyData/{self.ticker}/{self.ticker}_CashFlow.cvs').st_size == 0) and tries < 5:
+        while (os.stat(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_CashFlow.cvs').st_size == 0) and tries < 5:
             try:
                 r = requests.get(url, timeout=1)
-                open(f'data/CompanyData/{self.ticker}/{self.ticker}_CashFlow.cvs', 'wb').write(r.content)
+                open(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_CashFlow.cvs', 'wb').write(r.content)
                 tries += 1
             except requests.exceptions.ReadTimeout:
                 r = requests.get(url, timeout=1)
-                open(f'data/CompanyData/{self.ticker}/{self.ticker}_CashFlow.cvs', 'wb').write(r.content)
+                open(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_CashFlow.cvs', 'wb').write(r.content)
                 tries += 1
         # print(f'Cash Flow Statement for {self.ticker} finished')
 
@@ -155,20 +155,20 @@ class CompanyFinancialData(object):
 # checking for some basics error. First, deleting companies that are not on the stock market anymore. Secondly, checking for empty files meaning that they don't exist in Morningstars database.
 def check_errors():
     print('checking for errors')
-    universe = pickle.load(open('data/pickles/universe_companies.pickle', 'rb'))
+    universe = pickle.load(open(f'{PATH}/data/pickles/universe_companies.pickle', 'rb'))
     # checking for empty files.
     empty_count = 0
-    for root, dirs, files in os.walk('data/CompanyData/'):
+    for root, dirs, files in os.walk(f'{PATH}/data/CompanyData/'):
         for file in files:
-            if os.stat(f'{root}/{file}').st_size == 0:
+            if os.stat(f'{PATH}/{root}/{file}').st_size == 0:
                 # Try to download the file again.
                 ticker = root[17:]
                 isin = universe[ticker][0]  # get the isin from pickle
                 company = CompanyFinancialData(ticker, isin)
                 company.download_all_financials()
                 # still empty then just delete the file. (error in morning stars data or in my search)
-                if os.stat(f'{root}/{file}').st_size == 0:
-                    os.remove(f'{root}/{file}')
+                if os.stat(f'{PATH}/{root}/{file}').st_size == 0:
+                    os.remove(f'{PATH}/{root}/{file}')
                     empty_count += 1
                     print(f"Error: {file} is an empty file.")
 
@@ -195,7 +195,7 @@ def download_prices(ticker):
                     print(f"giving up on getting data for {ticker}")
             else:  # We got the compact data without an error, so let's now add the new data on top of the existing historical data.
                 try:
-                    df_old = pd.read_csv(f'data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
+                    df_old = pd.read_csv(f'{PATH}/data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs', delimiter=',', header=0, skip_blank_lines=True)
                 except FileNotFoundError:  # except if there's not already any data (probably a new company) then let's just get the last 100 days.
                     df = pd.read_csv(f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={ticker}&apikey={APIKEY}&datatype=csv&outputsize=compact')
                     df.set_index('timestamp', inplace=True)
@@ -238,7 +238,7 @@ def download_prices_alternative(ticker):
 # Download financials for every company. Should be redownloaded once in a while to get latest.
 def download_company_financial_data():
     print(f"Starting to download all financial data for each company at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
-    universe = pickle.load(open('data/pickles/universe_companies.pickle', 'rb'))
+    universe = pickle.load(open(f'{PATH}/data/pickles/universe_companies.pickle', 'rb'))
     n = 0
     universe_size = len(universe)
     for key, value in universe.items():
@@ -251,7 +251,7 @@ def download_company_financial_data():
 # Downloading stock prices for all companies (up to 20 years of daily prices)
 def all_stock_prices():
     print(f"Starting to download all stocks prices at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
-    universe = pickle.load(open('data/pickles/universe_companies.pickle', 'rb'))
+    universe = pickle.load(open(f'{PATH}/data/pickles/universe_companies.pickle', 'rb'))
     n = 0
     universe_size = len(universe)
     errors = []
@@ -279,20 +279,20 @@ def all_stock_prices():
 def calculate_average_keyratios():  # calculates average key ratios for the whole market and each sector.
     # create pickle file called average_keyratios.pickle where all of the average key ratios are saved
 
-    if not os.path.isfile("data/pickles/average_keyratios.pickle"):  # if the file doesn't exist then let's create it.
+    if not os.path.isfile(f"{PATH}/data/pickles/average_keyratios.pickle"):  # if the file doesn't exist then let's create it.
         average_keyratios = {}
     else:
-        average_keyratios = pickle.load(open("data/pickles/average_keyratios.pickle", "rb"))
+        average_keyratios = pickle.load(open(f"{PATH}/data/pickles/average_keyratios.pickle", "rb"))
 
     if not os.path.isfile("data/pickles/sector_average_keyratios.pickle"):  # if the file doesn't exist then let's create it.
         sector_average_keyratios = {}
     else:
-        sector_average_keyratios = pickle.load(open("data/pickles/sector_average_keyratios.pickle", "rb"))
+        sector_average_keyratios = pickle.load(open(f"{PATH}/data/pickles/sector_average_keyratios.pickle", "rb"))
 
-    for root, dirs, files in os.walk("data/pickles/"):
+    for root, dirs, files in os.walk(f"{PATH}/data/pickles/"):
         for file in files:
             if "_data" in file:
-                old_data = pickle.load(open(f'data/pickles/{file}', "rb"))
+                old_data = pickle.load(open(f'{PATH}/data/pickles/{file}', "rb"))
                 ratio_category = file[:-7]
                 for ratio, values in old_data.items():
                     sum_values = 0
@@ -318,7 +318,7 @@ def calculate_average_keyratios():  # calculates average key ratios for the whol
                     else:
                         average_keyratios.update({ratio_category: {ratio: [avg_ratio, n]}})
 
-    with open('data/pickles/average_keyratios.pickle', 'wb') as f:  # saving market averages
+    with open(f'{PATH}/data/pickles/average_keyratios.pickle', 'wb') as f:  # saving market averages
         pickle.dump(average_keyratios, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     sector_average_keyratios = duplicate_data_sector(sector_average_keyratios)
@@ -333,12 +333,11 @@ def calculate_average_keyratios():  # calculates average key ratios for the whol
                     n += 1
                 avg_ratio = float(sum_values / n)  # calculating sector avgs
                 sector_average_keyratios[sector][category][ratio].update({"results": [avg_ratio, n]})
-    pp(sector_average_keyratios)
-    with open('data/pickles/sector_average_keyratios.pickle', 'wb') as f:  # saving sector averages
+    with open(f'{PATH}/data/pickles/sector_average_keyratios.pickle', 'wb') as f:  # saving sector averages
         pickle.dump(sector_average_keyratios, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 def duplicate_data_sector(sector_average_keyratios):  # check if a company's data is in multiple sectors. (this will happen if a company has changed sectors)
-    universe = pickle.load(open('data/pickles/universe_companies.pickle', 'rb'))
+    universe = pickle.load(open(f'{PATH}/data/pickles/universe_companies.pickle', 'rb'))
     delete_list = list()
     for universe_ticker, universe_values in universe.items():
         for sector in sector_average_keyratios:
@@ -361,7 +360,7 @@ def duplicate_data_sector(sector_average_keyratios):  # check if a company's dat
 # updates the pickle files for all stocks and then updates the calculated average market and sector of each key ratio.
 def get_all_keyratios_avgs():
     print(f"Calculating all key ratios average for both market and each sector at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
-    universe = pickle.load(open('data/pickles/universe_companies.pickle', 'rb'))
+    universe = pickle.load(open(f'{PATH}/data/pickles/universe_companies.pickle', 'rb'))
     for ticker, values in universe.items():
         stock = usedata.Stock(ticker, values[1], values[0], values[3], values[2])  # ticker, name, isin, sector, stock_currency
         stock.save_keyratios()

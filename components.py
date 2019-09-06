@@ -5,7 +5,7 @@ import millify
 import numpy as np
 # import pp
 import pickle
-from settings import GRAPHSETTINGS as gs
+from settings import PATH, GRAPHSETTINGS as gs
 
 def make_graph(value, color, graphtype):
     if graphtype == 'scatter2y':
@@ -116,7 +116,7 @@ class Table(object):
         html_content = []
         num = 0
         n = self.startrow
-        market_avg = pickle.load(open("data/pickles/average_keyratios.pickle", "rb"))
+        market_avg = pickle.load(open(f"{PATH}/data/pickles/average_keyratios.pickle", "rb"))
         for val in self.values:  # val returns a list of pandas series that all use the same header columns.
             table = []
 

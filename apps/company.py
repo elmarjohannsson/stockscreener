@@ -13,12 +13,12 @@ import os
 import millify
 import usedata
 import components
-from settings import GRAPHSETTINGS as gs
+from settings import PATH, GRAPHSETTINGS as gs
 
 # making the html component for the graphs of the companies financials.
 def get_financial_graphs(stock):
     # Getting the keyratios for the financials graphs and checking if the files are empty. If they are they should not be added.
-    kr_url = f'data/CompanyData/{stock.ticker}/{stock.ticker}_KeyRatios.cvs'
+    kr_url = f'{PATH}/data/CompanyData/{stock.ticker}/{stock.ticker}_KeyRatios.cvs'
     # if keyratios.cvs is not empty then get it
     if not os.path.isfile(kr_url):
         add_income = False
@@ -28,7 +28,7 @@ def get_financial_graphs(stock):
         revenue, grossMargin, operatingIncome, operatingMargin, netIncome = stock.get_income()
         add_income = True
 
-    bs_url = f'data/CompanyData/{stock.ticker}/{stock.ticker}_BalanceSheet.cvs'
+    bs_url = f'{PATH}/data/CompanyData/{stock.ticker}/{stock.ticker}_BalanceSheet.cvs'
     # if balance sheet is not empty then get it
     if not os.path.isfile(bs_url):
         add_balance = False
@@ -46,7 +46,7 @@ def get_financial_graphs(stock):
             debt_ratio = debt_ratio.round(2)
             add_balance = [True, True]
 
-    cf_url = f'data/CompanyData/{stock.ticker}/{stock.ticker}_CashFlow.cvs'
+    cf_url = f'{PATH}/data/CompanyData/{stock.ticker}/{stock.ticker}_CashFlow.cvs'
     # if cash flow is not empty then get it
     if not os.path.isfile(cf_url):
         add_cashflow = False
@@ -252,7 +252,7 @@ def get_stock_growth(stock):
 
 # creating the table component for all of the key ratios.
 def get_keyratios_table(stock):
-    if os.stat(f'data/CompanyData/{stock.ticker}/{stock.ticker}_KeyRatios.cvs').st_size == 0:
+    if os.stat(f'{PATH}/data/CompanyData/{stock.ticker}/{stock.ticker}_KeyRatios.cvs').st_size == 0:
         keyratios_html = html.Div(className='', children=[
             html.H5(f'*Key Ratios do not exist for {stock.name}')
         ])
@@ -696,24 +696,24 @@ def update_graph(value, relayoutData, pathname):  # toggle
             # ticker = ticker.replace("/VALUATION", "")
         else:
             # Getting the data
-            if os.path.isfile(f'data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs') and os.path.isfile(f'data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs'):  # Finding the one with the most recent data
-                daily_adj_mtime = os.path.getmtime(f'data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs')
-                daily_mtime = os.path.getmtime(f'data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs')
+            if os.path.isfile(f'{PATH}/data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs') and os.path.isfile(f'{PATH}/data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs'):  # Finding the one with the most recent data
+                daily_adj_mtime = os.path.getmtime(f'{PATH}/data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs')
+                daily_mtime = os.path.getmtime(f'{PATH}/data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs')
                 if daily_mtime > daily_adj_mtime:
                     use_data = "daily"
                 elif daily_mtime < daily_adj_mtime:
                     use_data = "adj"
                 else:
                     use_data = "adj"
-            elif os.path.isfile(f'data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs'):
+            elif os.path.isfile(f'{PATH}/data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs'):
                 use_data = "adj"
-            elif os.path.isfile(f'data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs'):
+            elif os.path.isfile(f'{PATH}/data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs'):
                 use_data = "daily"
 
             if use_data == "adj":
-                df = pd.read_csv(f'data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs')
+                df = pd.read_csv(f'{PATH}/data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs')
             elif use_data == "daily":
-                df = pd.read_csv(f'data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs')
+                df = pd.read_csv(f'{PATH}/data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs')
             df.set_index("timestamp", inplace=True)
 
             def append_graph(name, data, color):
