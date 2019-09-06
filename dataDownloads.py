@@ -217,7 +217,7 @@ def download_prices(ticker):
         if df.index.name != "timestamp":
             df.set_index('timestamp', inplace=True)
     df = df[(df.close != 0)]  # drop rows with errors
-    df.to_csv(f'{PATH}data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs')  # Saving the data
+    df.to_csv(f'{PATH}/data/CompanyData/{ticker}/{ticker}_AdjDailyPrices.cvs')  # Saving the data
     return True
 
 def download_prices_alternative(ticker):
@@ -229,7 +229,7 @@ def download_prices_alternative(ticker):
     else:
         df.columns = ['timestamp', 'open', 'close', 'high', 'low', 'volume']
         df.set_index('timestamp', inplace=True)
-        df.to_csv(f'{PATH}data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs')  # Saving the data
+        df.to_csv(f'{PATH}/data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs')  # Saving the data
         return True
 
 # Download financials for every company. Should be redownloaded once in a while to get latest.
