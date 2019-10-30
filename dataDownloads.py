@@ -9,6 +9,7 @@ import shutil
 from decimal import Decimal
 import usedata
 import urllib.request
+import json
 from settings import APIKEY, APIKEY2, APIKEY3, PATH
 # import pp
 # The list of companies on Nasdaq Copenhagen. Should be updated once in a while to get changes.
@@ -52,6 +53,14 @@ def save_nasdaqcph_companies():
 
     with open(f'{PATH}/data/pickles/universe_companies.pickle', 'wb') as f:   # Dictionary with all companies. key:ticker values:isin, name, currency, sector, icb
         pickle.dump(companies, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    alternative_list = []
+    for ticker in companies:
+        ticker = ticker.replace(".CPH", ".CO")
+        alternative_list.append(ticker)
+
+    with open(f'{PATH}/data/pickles/universe_companies_alternative.pickle', 'wb') as f:   # list of all stock tickers using the alternative format with the .CO instead of .CPH
+        pickle.dump(alternative_list, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     with open(f'{PATH}/data/pickles/search.pickle', 'wb') as f:  # list with lists containing name and ticker.
         pickle.dump(search, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -233,6 +242,7 @@ def download_prices_alternative(ticker):
     if "Error" in df.columns[0]:
         return False
     else:
+        print(df.head())
         df.columns = ['timestamp', 'open', 'close', 'high', 'low', 'volume']
         df.set_index('timestamp', inplace=True)
         df.to_csv(f'{PATH}/data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs')  # Saving the data
@@ -278,6 +288,12 @@ def all_stock_prices():
             else:
                 print(f"can't get prices for {key_ticker}")
     print(f"All stocks prices updated on {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
+
+# Updates the pickle with the descriptive data for all stocks.
+# def update_descriptive_data():
+    # get the data
+
+    # should include the following: Market cap, sector, Volume, Share price, Stock exchange, currency, shares outstanding
 
 def calculate_average_keyratios():  # calculates average key ratios for the whole market and each sector.
     # create pickle file called average_keyratios.pickle where all of the average key ratios are saved
@@ -359,37 +375,35 @@ def duplicate_data_sector(sector_average_keyratios):  # check if a company's dat
             sector_average_keyratios.pop(delete_info[3])
     return sector_average_keyratios
 
-# updates the pickle files for all stocks and then updates the calculated average market and sector of each key ratio.
+def check_errors_keyratios_data():
+    keyratios_file_names = {"rev_growth_data", "inc_growth_data", "efficiency_data", "financials_data", "profitability_data", "cashflow_data", "liquidity_data"}
+    # let's check for stocks that are not in our universe and delete them.
+    universe = pickle.load(open(f'{PATH}/data/pickles/universe_companies.pickle', 'rb'))
+    for pickle_name in keyratios_file_names:
+        # open the pickle for a category of key ratios
+        new_data = pickle.load(open(f"{PATH}/data/pickles/{pickle_name}.pickle", "rb"))
+        old_data = pickle.load(open(f"{PATH}/data/pickles/{pickle_name}.pickle", "rb"))
+        for ratio in old_data:  # for each ratio in the pickle file check through the tickers
+            for ticker in old_data[ratio]:  # for each ticker within each ratio check if the ticker is in the universe if not then delete it.
+                if ticker in universe:  # the ticker is in the universe we don't have to do anything
+                    pass
+                else:  # ticker is not in the universe, so let's delete it.
+                    del new_data[ratio][ticker]
+        # saving the updated pickle file
+        with open(f'{PATH}/data/pickles/{pickle_name}.pickle', 'wb') as f:
+            pickle.dump(new_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+# updates the _data pickle files with key ratios for all stocks and then updates the calculated average market and sector of each key ratio.
 def get_all_keyratios_avgs():
     print(f"Calculating all key ratios average for both market and each sector at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
     universe = pickle.load(open(f'{PATH}/data/pickles/universe_companies.pickle', 'rb'))
     for ticker, values in universe.items():
+        print(f"Saving key ratios for {ticker}")
         stock = usedata.Stock(ticker, values[1], values[0], values[3], values[2])  # ticker, name, isin, sector, stock_currency
         stock.save_keyratios()
+    check_errors_keyratios_data()
     calculate_average_keyratios()
     print(f"Finished calculating key ratios averages at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
-
-# def save_large_pickles():
-#     # Lets make the overview file first. This includes Ticket, name, sector, market cap(later), market(later) price, P / E, volume, 52w low, 52w high
-#     universe = pickle.load(open('data/pickles/universe_companies.pickle', 'rb'))
-#     data = []
-#     for ticker, values in universe.items()
-#         stock = usedata.Stock(ticker, values[1], values[0], values[3], values[2])
-
-#         # price =
-#         company_data = [ticker, values[1], values[3]]
-
-#         data.append(company_data)
-
-#     df_overview = pd.DataFrame(data, columns=["ticker", "name", "sector", "price", "P/E", "volume (30 day avg)", "52w low", "52w high"])
-
-    # company
-
-    # now let's take all of the growth pickles and put them together to one.
-
-    # Now let's take all of the financial ratios and put them to one
-
-    # Now let's take all of the valuation ratios and put them to one
 
 
 if __name__ == "__main__":
@@ -405,11 +419,11 @@ if __name__ == "__main__":
     else:
         if args[1] == "update financials":
             print("updating financial data for all companies")
-            # save_nasdaqcph_companies()  # updating the list of companies on the market.
+            save_nasdaqcph_companies()  # updating the list of companies on the market.
             # # # **** Downloading the financials for every company. Should be redownloaded once in a while to get latest.
-            # download_company_financial_data()  # if True then update all, otherwise only new companies in the market.
+            download_company_financial_data()  # if True then update all, otherwise only new companies in the market.
             # # Check for errors and retry all companies with errors
-            # check_errors()  # check how many errors still exist after trying again. Files that still error don't exist.
+            check_errors()  # check how many errors still exist after trying again. Files that still error don't exist.
             get_all_keyratios_avgs()  # updates the pickle files for all stocks and then updates the calculated average market and sector of each key ratio.
 
         elif args[1] == "update prices":
@@ -422,9 +436,9 @@ if __name__ == "__main__":
             save_nasdaqcph_companies()  # updating the list of companies on the market.
         elif args[1] == "setup":
             print(f"setting up application for first time use at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
-            save_nasdaqcph_companies()  # first this one to run
-            all_stock_prices()
-            download_company_financial_data()
+            # save_nasdaqcph_companies()  # first this one to run
+            # all_stock_prices()
+            # download_company_financial_data()
             get_all_keyratios_avgs()  # last to run after all the others are finished
             print(f"finished setting up application at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
         elif args[1] == "test":
@@ -447,6 +461,8 @@ if __name__ == "__main__":
             print('"test" for testing new functions')
             print("'ticker {ticker}' for updating prices for ticker")
 
+            stock = usedata.Stock("SAS-DKK.CPH", "name", "isin", "sector", "stock_currency")  # ticker, name, isin, sector, stock_currency
+            stock.save_keyratios()
     end = time.time()
     run_time_s = end - start
     run_time_m = run_time_s / 60

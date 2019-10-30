@@ -15,7 +15,7 @@ def make_graph(value, color, graphtype):
             opacity=0.8,
             hoverinfo=gs['hoverinfo'],
             line=dict(color=color),
-            mode='line',
+            mode='lines',
             yaxis='y2'
         )
     elif graphtype == 'bar':
@@ -132,9 +132,7 @@ class Table(object):
             ])])
             table.append(tr)
             category = self.title[num]
-            if category == "FINANCIALS":
-                category = "financials_data"
-            elif category == "PROFITABILITY":
+            if category == "PROFITABILITY":
                 category = "profitability_data"
             elif category == "CASH FLOW":
                 category = "cashflow_data"
@@ -225,7 +223,7 @@ def table_keystats(stock):
         price_latest = stock.past_prices_close['Current']  # latest close price
         price_latest = round(float(price_latest), 3)
 
-    volume_avg_30day = stock.calc_avg_volume(30)  # 30 day average stock trading volume
+        volume_avg_30day = stock.calc_avg_volume(22)  # 30 day average stock trading volume (22 trading days in a month)
 
     if "," in str(shares['TTM']):
         shares_ttm = shares['TTM'].replace(",", "")
@@ -259,10 +257,12 @@ def table_keystats(stock):
         shares = shares_ttm * 1000000
         shares = millify.millify(shares, precision=2)
 
-    if ".0" in str(price_latest):
+    if ".0" in str(price_latest)[-2:]:
         price_latest = str(price_latest).replace(".0", "")
-
-    volume_avg_30day = millify.prettify(round(volume_avg_30day, 0)).replace(".0", "")
+    if volume_avg_30day == "*":
+        volume_avg_30day = "-"  # Error getting volume
+    else:
+        volume_avg_30day = millify.prettify(round(volume_avg_30day, 0)).replace(".0", "")
 
     def get_pdseries_html_row(pd_series):
         if type(pd_series["TTM"]) is str and pd_series['TTM'] != "*":
@@ -326,7 +326,7 @@ def table_keystats(stock):
                 html.Td([f"{price_latest} {stock.stock_currency}"], className="right-align bold")
             ]),
             html.Tr([  # Average 30-day volume row
-                html.Td(["30 Day Avg Volume"]),
+                html.Td(["30-Day Avg Daily Volume"]),
                 html.Td([volume_avg_30day], className="right-align bold")
             ]),
             html.Tr([  # Market cap row

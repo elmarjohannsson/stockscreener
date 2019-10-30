@@ -254,14 +254,15 @@ def get_stock_growth(stock):
 def get_keyratios_table(stock):
     if os.stat(f'{PATH}/data/CompanyData/{stock.ticker}/{stock.ticker}_KeyRatios.cvs').st_size == 0:
         keyratios_html = html.Div(className='', children=[
-            html.H5(f'*Key Ratios do not exist for {stock.name}')
+            html.H5(f'*Key Ratios for {stock.name} do not exist...')
         ])
     else:
         rev_growth_vals, inc_growth_vals, efficiency_vals, financials_vals, profitability_vals, cashflow_vals, liquidity_vals = stock.get_all_keyratios()
         # print("get_all_keyratios function success")
-        all_keyratios = [financials_vals, profitability_vals, cashflow_vals, liquidity_vals, efficiency_vals, rev_growth_vals, inc_growth_vals]
-        keyratios_name = ["FINANCIALS", "PROFITABILITY", "CASH FLOW", "LIQUIDITY", "EFFICIENCY", "REVENUE GROWTH", "NET INCOME GROWTH"]
-        keyratios_startrow = [-1, -1, -1, -1, -1, -1, -2]
+        del financials_vals
+        all_keyratios = [profitability_vals, cashflow_vals, liquidity_vals, efficiency_vals, rev_growth_vals, inc_growth_vals]
+        keyratios_name = ["PROFITABILITY", "CASH FLOW", "LIQUIDITY", "EFFICIENCY", "REVENUE GROWTH", "NET INCOME GROWTH"]
+        keyratios_startrow = [-1, -1, -1, -1, -1, -2]
         num = 0
         for val in all_keyratios:  # filtering bad data out
             if val == []:  # if list is empty then we don't want to add it.
@@ -402,9 +403,9 @@ def get_graph_key_stats_section(stock):
             ], className='col l9 push-l3 s12'),
             html.Div([  # key statistics table col 4
                 html.Div(className="divider"),
-                html.H5("KEY STATISTICS", className="center-align"),
+                html.H5("KEY INFORMATION", className="center-align"),
                 components.table_keystats(stock)
-            ], className='col l3 pull-l9 s8 offset-s2')
+            ], className='col l3 pull-l9 s8 offset-s2'),
             # insert key stat table here
         ], className='row'),
     ], className='section')
@@ -722,12 +723,12 @@ def update_graph(value, relayoutData, pathname):  # toggle
                     y=data,
                     name=name,
                     line=dict(color=color),
-                    mode="line",
+                    mode="lines",
                 ))
             if use_data == "adj":
-                graphValues = {1: ['High', df.high, '3DAEA2'], 2: ['Low', df.low, 'C70838'], 3: ['Close', df.close, "20639B"], 4: ['Adj. Close', df.adjusted_close, '153F5F']}
+                graphValues = {1: ['High', df.high, '#3DAEA2'], 2: ['Low', df.low, '#C70838'], 3: ['Close', df.close, "#20639B"], 4: ['Adj. Close', df.adjusted_close, '#153F5F']}
             elif use_data == "daily":
-                graphValues = {1: ['High', df.high, '3DAEA2'], 2: ['Low', df.low, 'C70838'], 3: ['Close', df.close, "20639B"]}
+                graphValues = {1: ['High', df.high, '#3DAEA2'], 2: ['Low', df.low, '#C70838'], 3: ['Close', df.close, "#20639B"]}
             for val in value:
                 append_graph(graphValues[val][0], graphValues[val][1], graphValues[val][2])
 
@@ -924,8 +925,7 @@ def update_graph(value, relayoutData, pathname):  # toggle
                             #     range=[rangeminy2, rangemaxy2],
                             #     rangemode='fixed'
                             # ),
-                            range=[lastdataDate, today],
-                            bgcolor="#6154B"
+                            range=[lastdataDate, today]
                         ),
                         type='date'
                     ),

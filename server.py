@@ -1,4 +1,5 @@
 import dash
+# from settings import PATH
 
 # # external css
 # icons = 'https://fonts.googleapis.com/icon?family=Material+Icons'
@@ -11,10 +12,9 @@ import dash
 #      "crossorigin": "anonymous"}
 # ]
 
-app = dash.Dash(__name__)
+# assets_url_path=f"{PATH}/assets"
 
-# adding custom meta tags
-app = dash.Dash(meta_tags=[
+app = dash.Dash(__name__, meta_tags=[
     # A description of the app, used by e.g.
     # search engines when displaying search results.
     {
