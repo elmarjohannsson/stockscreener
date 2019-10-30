@@ -436,7 +436,7 @@ if __name__ == "__main__":
             save_nasdaqcph_companies()  # updating the list of companies on the market.
         elif args[1] == "setup":
             print(f"setting up application for first time use at {time.strftime('%d/%m/%Y')} at {time.strftime('%H:%M:%S')}")
-            # save_nasdaqcph_companies()  # first this one to run
+            save_nasdaqcph_companies()  # first this one to run
             # all_stock_prices()
             # download_company_financial_data()
             get_all_keyratios_avgs()  # last to run after all the others are finished

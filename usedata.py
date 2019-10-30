@@ -497,13 +497,10 @@ class Stock(object):
                 currencies = {}
                 fx = self.update_currency(currencies, to_currency, from_currency)
 
-            # print(ratio[-1], "ORIGINAL")
-
             if ratio[-1] == "*":
                 pass
             else:
                 ratio[-1] = float(str(ratio[-1]).replace(",", "")) * fx
-            print(ratio[-1], "IN DKK")
 
             if ratio[-2] == "*":
                 pass
