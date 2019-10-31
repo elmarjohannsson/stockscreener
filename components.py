@@ -219,6 +219,7 @@ def table_keystats(stock):
         return_1yr = "-"
     if stock.past_prices_close == "*":
         price_latest = "-"
+        volume_avg_30day = "*"
     else:
         price_latest = stock.past_prices_close['Current']  # latest close price
         price_latest = round(float(price_latest), 3)

@@ -372,43 +372,63 @@ def get_table_statement(stock, load):
     return financial_statement_html
 
 def get_graph_key_stats_section(stock):
-    if stock.use_data == "daily":
-        btns = [{'label': 'Close', 'value': 3},
-                {'label': 'High', 'value': 1},
-                {'label': 'Low', 'value': 2}]
-    elif stock.use_data == "adj":
-        btns = [{'label': 'Close', 'value': 3},
-                {'label': 'High', 'value': 1},
-                {'label': 'Low', 'value': 2},
-                {'label': 'Adjusted', 'value': 4}]
-    section_one_html = html.Div([  # section div
-        html.Div([  # row div
-            html.Div([
-                html.Div(className="divider"),
-                html.H5(f"STOCK PERFORMANCE ({stock.stock_currency})", className="center-align"),
-                html.Div([  # col 10 for graph
-                    dcc.Graph(id='stock_graph', config=gs['config'])
-                ], className='col s11'),
-                html.Div([  # col-2 for checklist menu and toggle switch
-                    # daq.ToggleSwitch(id="toggle_graph_type", value=True, vertical=True, label="Change to"),
-                    dcc.Checklist(  # checklist for graph settings
-                        id='dropdown_graph_options',
-                        className="",
-                        options=btns,
-                        value=[3],
-                        labelClassName="btn stock-checkbox"
-                    )
-                ], className='col s1'),
-                get_stock_growth(stock),  # Stock growth section
-            ], className='col l9 push-l3 s12'),
-            html.Div([  # key statistics table col 4
-                html.Div(className="divider"),
-                html.H5("KEY INFORMATION", className="center-align"),
-                components.table_keystats(stock)
-            ], className='col l3 pull-l9 s8 offset-s2'),
-            # insert key stat table here
-        ], className='row'),
-    ], className='section')
+    if stock.past_prices_close != "*":
+        if stock.use_data == "daily":
+            btns = [{'label': 'Close', 'value': 3},
+                    {'label': 'High', 'value': 1},
+                    {'label': 'Low', 'value': 2}]
+        elif stock.use_data == "adj":
+            btns = [{'label': 'Close', 'value': 3},
+                    {'label': 'High', 'value': 1},
+                    {'label': 'Low', 'value': 2},
+                    {'label': 'Adjusted', 'value': 4}]
+        section_one_html = html.Div([  # section div
+            html.Div([  # row div
+                html.Div([
+                    html.Div(className="divider"),
+                    html.H5(f"STOCK PERFORMANCE ({stock.stock_currency})", className="center-align"),
+                    html.Div([  # col 10 for graph
+                        dcc.Graph(id='stock_graph', config=gs['config'])
+                    ], className='col s11'),
+                    html.Div([  # col-2 for checklist menu and toggle switch
+                        # daq.ToggleSwitch(id="toggle_graph_type", value=True, vertical=True, label="Change to"),
+                        dcc.Checklist(  # checklist for graph settings
+                            id='dropdown_graph_options',
+                            className="",
+                            options=btns,
+                            value=[3],
+                            labelClassName="btn stock-checkbox"
+                        )
+                    ], className='col s1'),
+                    get_stock_growth(stock),  # Stock growth section
+                ], className='col l9 push-l3 s12'),
+                html.Div([  # key statistics table col 4
+                    html.Div(className="divider"),
+                    html.H5("KEY INFORMATION", className="center-align"),
+                    components.table_keystats(stock)
+                ], className='col l3 pull-l9 s8 offset-s2'),
+                # insert key stat table here
+            ], className='row'),
+        ], className='section')
+    else:  # When there is no data for the stock's price
+        section_one_html = html.Div([  # section div
+            html.Div([  # row div
+                html.Div([
+                    html.Div(className="divider"),
+                    html.H5(f"STOCK PERFORMANCE ({stock.stock_currency})", className="center-align"),
+                    html.Div([
+                        html.H2("Oops!"),
+                        html.H6(f"There's been an error retrieving the historical market prices for {stock.name}")
+                    ], className="center-align"),
+                    html.Div([  # key statistics table col 4
+                        html.Div(className="divider"),
+                        html.H5("KEY INFORMATION", className="center-align"),
+                        components.table_keystats(stock)
+                    ], className='col l4 s8')
+                ])
+                # insert key stat table here
+            ], className='row'),
+        ], className='section')
     return section_one_html
 
 def get_valuation(stock):

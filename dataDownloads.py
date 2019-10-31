@@ -240,7 +240,13 @@ def download_prices_alternative(ticker):
     print(f"Getting prices for {ticker}")
     df = pd.read_csv(f"https://api.worldtradingdata.com/api/v1/history?symbol={ticker_alternative}&api_token={APIKEY3}&sort_order=oldest&output=csv")
     if "Error" in df.columns[0]:
-        return False
+        if ticker_alternative == "GMAB.CO": # sometimes using this "GEN.CO" works instead of the original.
+            ticker = "GEN.CO"
+            df = pd.read_csv(f"https://api.worldtradingdata.com/api/v1/history?symbol={ticker}&api_token={APIKEY3}&sort_order=oldest&output=csv")
+            if "Error" in df.columns[0]:
+                download_prices(ticker)
+        else:
+            download_prices(ticker)
     else:
         print(df.head())
         df.columns = ['timestamp', 'open', 'close', 'high', 'low', 'volume']

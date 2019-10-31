@@ -15,10 +15,10 @@ def get_screener():
     # default is sector, market cap, P/E, price (latest), volume (latest)
     # df_screener_data =
     df_screener_options = pd.DataFrame(OrderedDict([
-        ('category', ['Profitability', "Income Growth", "Profitability"]),
-        ('criteria', ['ROA Ratio', "YoY Revenue", "ROA Ratio"]),
-        ('condition', ["Less than", "More than", "More than"]),
-        ('value', ["50", "", "10"])
+        ('category', ['Profitability', "Income Growth", "Financials"]),
+        ('criteria', ['ROE Ratio', "YoY Growth, %", "Payout Ratio, %"]),
+        ('condition', ["More than", "More than", "More than"]),
+        ('value', ["5", "10", "0"])
     ]))
 
     layout = html.Div([html.Div([
