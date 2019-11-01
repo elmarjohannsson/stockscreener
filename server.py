@@ -42,3 +42,4 @@ app = dash.Dash(__name__, meta_tags=[
 ])
 
 app.config['suppress_callback_exceptions'] = True
+app.title = "Stockscreener.dk - Free Financial Data For The Nordic Markets!"
