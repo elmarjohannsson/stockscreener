@@ -237,22 +237,19 @@ def download_prices(ticker):
 
 def download_prices_alternative(ticker):
     ticker_alternative = ticker.replace(".CPH", ".CO")
-    print(f"Getting prices for {ticker}")
-    df = pd.read_csv(f"https://api.worldtradingdata.com/api/v1/history?symbol={ticker_alternative}&api_token={APIKEY3}&sort_order=oldest&output=csv")
-    if "Error" in df.columns[0]:
-        if ticker_alternative == "GMAB.CO": # sometimes using this "GEN.CO" works instead of the original.
-            ticker = "GEN.CO"
-            df = pd.read_csv(f"https://api.worldtradingdata.com/api/v1/history?symbol={ticker}&api_token={APIKEY3}&sort_order=oldest&output=csv")
-            if "Error" in df.columns[0]:
-                download_prices(ticker)
-        else:
-            download_prices(ticker)
+    # print(f"Getting prices for {ticker}")
+    if ticker_alternative == "GMAB.CO":
+        download_prices(ticker)
     else:
-        print(df.head())
-        df.columns = ['timestamp', 'open', 'close', 'high', 'low', 'volume']
-        df.set_index('timestamp', inplace=True)
-        df.to_csv(f'{PATH}/data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs')  # Saving the data
-        return True
+        df = pd.read_csv(f"https://api.worldtradingdata.com/api/v1/history?symbol={ticker_alternative}&api_token={APIKEY3}&sort_order=oldest&output=csv")
+        if "Error" in df.columns[0]:
+            download_prices(ticker)
+        else:
+            # print(df.head())
+            df.columns = ['timestamp', 'open', 'close', 'high', 'low', 'volume']
+            df.set_index('timestamp', inplace=True)
+            df.to_csv(f'{PATH}/data/CompanyData/{ticker}/{ticker}_DailyPrices.cvs')  # Saving the data
+            return True
 
 # Download financials for every company. Should be redownloaded once in a while to get latest.
 def download_company_financial_data():
