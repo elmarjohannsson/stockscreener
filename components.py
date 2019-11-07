@@ -241,7 +241,13 @@ def table_keystats(stock):
     else:
         shares_ttm = shares_ttm
 
+    if type(shares_2) is str and shares_2 != "*":
+        shares_2 = float(shares_2)
+    else:
+        shares_2 = shares_2
+
     if shares_ttm == 0 or np.isnan(shares_ttm):
+        print(shares_2, "shares_2", type(shares_2))
         if shares_2 == 0 or np.isnan(shares_2):
             marketcap = "-"
             shares = "-"
