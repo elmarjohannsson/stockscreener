@@ -191,7 +191,7 @@ class Table(object):
                 row = html.Tbody([html.Tr(rows_value)])
                 table.append(row)
             tables = html.Div([
-                html.H5(self.title[num], className="center-align"),
+                html.H5(self.title[num], className="center-align myblue-text"),
                 html.Div(className="divider"),
                 html.Div([  # table
                     html.Table(table, className='highlight centered')
@@ -247,7 +247,6 @@ def table_keystats(stock):
         shares_2 = shares_2
 
     if shares_ttm == 0 or np.isnan(shares_ttm):
-        print(shares_2, "shares_2", type(shares_2))
         if shares_2 == 0 or np.isnan(shares_2):
             marketcap = "-"
             shares = "-"

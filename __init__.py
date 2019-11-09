@@ -18,26 +18,48 @@ def get_app_layout():
             id='url',
             refresh=False
         ),
-        html.Div([  # class=container - div that contains the whole page
-            html.Nav([
-                html.Div([  # nav-wrapper class
-                    html.A("StockScreener", href="/", className="brand-logo center")
-                    # html.Ul([
-                    #     html.Li(
-                    #         html.A("About Us", href="about")
-                    #     )], id="nav-mobile", className="right hide-on-med-and-down")
-                ], className='nav-wrapper')
-            ]),
-            html.Div(  # search function
-                dcc.Dropdown(options=[{'label': l[1], 'value': l[0]}
-                                      for l in search
-                                      ],
-                             id='searchbar',
-                             placeholder='Search for stock'),
-                className='section'),
-            html.Div(id='page-content')
-        ], className='container'),
-    ])
+        html.Div([
+            # START OF HEADER
+            html.Header([html.Nav([
+                html.Div([  # nav-wrapper myblue class
+                    html.A("QUANTZ", href="/", className="brand-logo logo-svg center"),
+                    html.Ul([  # nav-mobile
+                        html.Li(
+                            html.A("About Us", href="about")
+                        )
+                    ], id="nav-mobile", className="right hide-on-med-and-down")
+                ], className='nav-wrapper myblue')
+            ])]),
+            # START OF BODY CONTENT
+            html.Main([
+                html.Div([  # class=container - div that contains the whole page
+                    html.Div(  # search function
+                        dcc.Dropdown(options=[{'label': l[1], 'value': l[0]}
+                                              for l in search
+                                              ],
+                                     id='searchbar',
+                                     placeholder='Search for stock'),
+                        className='section'),
+                    html.Div(id='page-content')  # PAGE CONTENT GETS ADDED IN HERE
+                ], className='container')
+            ])
+        ], className="content"),
+        # START OF FOOTER
+        html.Footer([
+            html.Div([  # container
+                html.Div([  # row
+                    html.Div([  # col l12
+                        html.Div([  # col l4
+                            html.A("QUANTZ", href="/", className="logolarge-svg")
+                        ], className="col l4"),
+                        html.Div([  # col l2 right
+                            html.P("© 2019 QUANTZ", className="white-text", style={"bottom": "0", "position": "absolute"})
+                        ], className="col l2 right", style={"height": "115px", "position": "relative"})
+                    ], className="col s12")
+                ], className="row")
+            ], className="container")
+        ], className="myblue")
+    ], className="footer")
     return layout
 
 
@@ -83,7 +105,6 @@ def display_pages(pathname):
             load = "news"
         else:
             load = "overview"
-        print(ticker, "TICKER")
         # check if the ticker exists
         universe = pickle.load(open(f'{PATH}/data/pickles/universe_companies.pickle', 'rb'))
         if ticker in universe:

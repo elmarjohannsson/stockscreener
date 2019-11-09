@@ -77,23 +77,23 @@ def get_financial_graphs(stock):
         data = []
         table = []
         if not is_series_empty(revenue):
-            data.append(components.make_graph(revenue, '#3DAEA2', 'bar'))
+            data.append(components.make_graph(revenue, '#00B287', 'bar'))  # green
             table.append(revenue)
         if not is_series_empty(operatingIncome):
-            data.append(components.make_graph(operatingIncome, '#20639B', 'bar'))
+            data.append(components.make_graph(operatingIncome, '#0083DA', 'bar'))  # blue light
             table.append(operatingIncome)
         if not is_series_empty(netIncome):
-            data.append(components.make_graph(netIncome, '#153F5F', 'bar'))
+            data.append(components.make_graph(netIncome, '#244ac4', 'bar'))  # blue main
             table.append(netIncome)
         if not is_series_empty(grossMargin):
-            data.append(components.make_graph(grossMargin, '#FE4A3B', 'scatter2y'))
+            data.append(components.make_graph(grossMargin, '#FE4A3B', 'scatter2y'))  # orange
             table.append(grossMargin)
         if not is_series_empty(operatingMargin):
-            data.append(components.make_graph(operatingMargin, '#C70838', 'scatter2y'))
+            data.append(components.make_graph(operatingMargin, '#C70838', 'scatter2y'))  # red
             table.append(operatingMargin)
 
         income_statement = html.Div(className='col s12', children=[
-            html.H5("ANNUAL INCOME STATEMENT", className="center-align"),
+            html.H5("ANNUAL INCOME STATEMENT", className="center-align myblue-text"),
             html.Div(className="divider"),
             html.Div([
                 dcc.Graph(
@@ -116,7 +116,7 @@ def get_financial_graphs(stock):
                     )
                 )
             ], className="col s12 xl6"),
-            components.Table(table, html_class='col s12 xl6', columns=columns).make_graph_table(href="financials/is", color_class=["my-green", "my-blue", "my-dark-blue", "my-orange", "my-red"])
+            components.Table(table, html_class='col s12 xl6', columns=columns).make_graph_table(href="financials/is", color_class=["my-green", "my-light-blue", "my-dark-blue", "my-orange", "my-red"])
         ])
         # make table for income statement. One row for each value in row.
         financial_graphs.append(income_statement)
@@ -126,19 +126,19 @@ def get_financial_graphs(stock):
         else:
             columns = 6
         if add_balance[1]:
-            data = [components.make_graph(assets, '#3DAEA2', 'bar'),
-                    components.make_graph(liabilities, '#20639B', 'bar'),
-                    components.make_graph(debt_ratio, '#FE4A3B', 'scatter2y')
+            data = [components.make_graph(assets, '#00B287', 'bar'),  # green
+                    components.make_graph(liabilities, '#244ac4', 'bar'),  # blue
+                    components.make_graph(debt_ratio, '#FF4A3B', 'scatter2y')  # red
                     ]
             table = [assets, liabilities, debt_ratio]
         else:
-            data = [components.make_graph(assets, '#3DAEA2', 'bar'),
-                    components.make_graph(liabilities, '#20639B', 'bar')
+            data = [components.make_graph(assets, '#00B287', 'bar'),  # green
+                    components.make_graph(liabilities, '#244ac4', 'bar')  # blue
                     ]
             table = [assets, liabilities]
         # Balance Sheet Graph
         balance_sheet = html.Div(className='col s12 financials-graph', children=[
-            html.H5("ANNUAL BALANCE SHEET", className="center-align"),
+            html.H5("ANNUAL BALANCE SHEET", className="center-align myblue-text"),
             html.Div(className="divider"),
             html.Div([
                 dcc.Graph(
@@ -178,11 +178,11 @@ def get_financial_graphs(stock):
             cashflow_table = components.Table([investing, financing], html_class='col s12 xl6').make_graph_table(['Investing Activities', 'Financing Activities'])
         else:
             graph_data = [
-                components.make_graph(operating, '#3DAEA2', 'bar'),
-                components.make_graph(investing, '#20639B', 'bar'),
-                components.make_graph(financing, '#153F5F', 'bar')
+                components.make_graph(operating, '#00B287', 'bar'),  # Green
+                components.make_graph(investing, '#244ac4', 'bar'),  # blue main
+                components.make_graph(financing, '#0083DA', 'bar')  # blue light
             ]
-            cashflow_table = components.Table([operating, investing, financing], html_class='col s12 xl6').make_graph_table(column_name=['Operating Activities', 'Investing Activities', 'Financing Activities'], href="financials/cf", color_class=["my-green", "my-blue", "my-dark-blue"])
+            cashflow_table = components.Table([operating, investing, financing], html_class='col s12 xl6').make_graph_table(column_name=['Operating Activities', 'Investing Activities', 'Financing Activities'], href="financials/cf", color_class=["my-green", "my-light-blue", "my-dark-blue"])
         # Cash Flow Graph
         cashflow_graph = html.Div(className='col s12 l6', children=[
             dcc.Graph(
@@ -203,7 +203,7 @@ def get_financial_graphs(stock):
             )
         ])
         cf_html = html.Div(className='col s12 financials-graph', children=[
-            html.H5("ANNUAL CASH FLOW ", className="center-align"),
+            html.H5("ANNUAL CASH FLOW ", className="center-align myblue-text"),
             html.Div(className="divider"),
             cashflow_graph,
             cashflow_table
@@ -386,7 +386,7 @@ def get_graph_key_stats_section(stock):
             html.Div([  # row div
                 html.Div([
                     html.Div(className="divider"),
-                    html.H5(f"STOCK PERFORMANCE ({stock.stock_currency})", className="center-align"),
+                    html.H5(f"STOCK PERFORMANCE ({stock.stock_currency})", className="center-align myblue-text"),
                     html.Div([  # col 10 for graph
                         dcc.Graph(id='stock_graph', config=gs['config'])
                     ], className='col s11'),
@@ -404,7 +404,7 @@ def get_graph_key_stats_section(stock):
                 ], className='col l9 push-l3 s12'),
                 html.Div([  # key statistics table col 4
                     html.Div(className="divider"),
-                    html.H5("KEY INFORMATION", className="center-align"),
+                    html.H5("KEY INFORMATION", className="center-align myblue-text"),
                     components.table_keystats(stock)
                 ], className='col l3 pull-l9 s8 offset-s2'),
                 # insert key stat table here
@@ -415,7 +415,7 @@ def get_graph_key_stats_section(stock):
             html.Div([  # row div
                 html.Div([
                     html.Div(className="divider"),
-                    html.H5(f"STOCK PERFORMANCE ({stock.stock_currency})", className="center-align"),
+                    html.H5(f"STOCK PERFORMANCE ({stock.stock_currency})", className="center-align myblue-text"),
                     html.Div([
                         html.H2("Oops!"),
                         html.H6(f"There's been an error retrieving the historical market prices for {stock.name}")
@@ -432,7 +432,7 @@ def get_graph_key_stats_section(stock):
     return section_one_html
 
 def get_valuation(stock):
-    return html.H5("Coming soon!", className="center-align bold", style={"margin-top": "7em"})
+    return html.H4("Coming soon!", className="center-align bold myblue-text", style={"margin-top": "7em"})
 
 def get_news(stock):
     if "B" == stock.name[-1]:
@@ -493,7 +493,7 @@ def get_news(stock):
     news_html = html.Div([
         html.Div([
             html.Div([
-                html.H5("NEWS AND ANNOUNCEMENTS", className="center-align"),
+                html.H5("NEWS AND ANNOUNCEMENTS", className="center-align myblue-text"),
                 html.Div(className='divider'),
                 html.Table([
                     html.Thead(
@@ -511,123 +511,123 @@ def get_tabs_navbar(stock, load):
     if load == "financials":
         ul = html.Ul([
             html.Li([
-                html.A(["OVERVIEW"], href=f'/company/{stock.ticker}', className="black-text")
+                html.A(["OVERVIEW"], href=f'/company/{stock.ticker}', className="myblue-text")
             ]),
             html.Li([
-                html.A(["FINANCIALS"], href='#', className="black-text")
-            ], className='active'),
+                html.A(["FINANCIALS"], href='#')
+            ], className='active', style={"background-color":"rgba(36, 74, 196, 0.9)"}),
             html.Li([
-                html.A(["RATIOS"], href=f'/company/{stock.ticker}/ratios', className="black-text")
+                html.A(["RATIOS"], href=f'/company/{stock.ticker}/ratios', className="myblue-text")
             ]),
             html.Li([
-                html.A(["VALUATION"], href=f'/company/{stock.ticker}/valuation', className="black-text")
+                html.A(["VALUATION"], href=f'/company/{stock.ticker}/valuation', className="myblue-text")
             ]),
             html.Li([
-                html.A(["NEWS"], href=f'/company/{stock.ticker}/news', className="black-text")
+                html.A(["NEWS"], href=f'/company/{stock.ticker}/news', className="myblue-text")
             ]),
 
         ])
     elif load == "ratios":
         ul = html.Ul([
             html.Li([
-                html.A(["OVERVIEW"], href=f'/company/{stock.ticker}', className="black-text")
+                html.A(["OVERVIEW"], href=f'/company/{stock.ticker}', className="myblue-text")
             ]),
             html.Li([
-                html.A(["FINANCIALS"], href=f'/company/{stock.ticker}/financials', className="black-text")
+                html.A(["FINANCIALS"], href=f'/company/{stock.ticker}/financials', className="myblue-text")
             ]),
             html.Li([
-                html.A(["RATIOS"], href='#', className="black-text")
-            ], className='active'),
+                html.A(["RATIOS"], href='#')
+            ], className='active', style={"background-color":"rgba(36, 74, 196, 0.9)"}),
             html.Li([
-                html.A(["VALUATION"], href=f'/company/{stock.ticker}/valuation', className="black-text")
+                html.A(["VALUATION"], href=f'/company/{stock.ticker}/valuation', className="myblue-text")
             ]),
             html.Li([
-                html.A(["NEWS"], href=f'/company/{stock.ticker}/news', className="black-text")
+                html.A(["NEWS"], href=f'/company/{stock.ticker}/news', className="myblue-text")
             ]),
 
         ])
     elif load == "valuation":
         ul = html.Ul([
             html.Li([
-                html.A(["OVERVIEW"], href=f'/company/{stock.ticker}', className="black-text")
+                html.A(["OVERVIEW"], href=f'/company/{stock.ticker}', className="myblue-text")
             ]),
             html.Li([
-                html.A(["FINANCIALS"], href=f'/company/{stock.ticker}/financials', className="black-text")
+                html.A(["FINANCIALS"], href=f'/company/{stock.ticker}/financials', className="myblue-text")
             ]),
             html.Li([
-                html.A(["RATIOS"], href=f'/company/{stock.ticker}/ratios', className="black-text")
+                html.A(["RATIOS"], href=f'/company/{stock.ticker}/ratios', className="myblue-text")
             ]),
             html.Li([
-                html.A(["VALUATION"], href='#', className="black-text")
-            ], className='active'),
+                html.A(["VALUATION"], href='#', className="white-text")
+            ], className='active', style={"background-color":"rgba(36, 74, 196, 0.9)"}),
             html.Li([
-                html.A(["NEWS"], href=f'/company/{stock.ticker}/news', className="black-text")
+                html.A(["NEWS"], href=f'/company/{stock.ticker}/news', className="myblue-text")
             ]),
 
         ])
     elif load == "news":
         ul = html.Ul([
             html.Li([
-                html.A(["OVERVIEW"], href=f'/company/{stock.ticker}', className="black-text")
+                html.A(["OVERVIEW"], href=f'/company/{stock.ticker}', className="myblue-text")
             ]),
             html.Li([
-                html.A(["FINANCIALS"], href=f'/company/{stock.ticker}/financials', className="black-text")
+                html.A(["FINANCIALS"], href=f'/company/{stock.ticker}/financials', className="myblue-text")
             ]),
             html.Li([
-                html.A(["RATIOS"], href=f'/company/{stock.ticker}/ratios', className="black-text")
+                html.A(["RATIOS"], href=f'/company/{stock.ticker}/ratios', className="myblue-text")
             ]),
             html.Li([
-                html.A(["VALUATION"], href=f'/company/{stock.ticker}/valuation', className="black-text")
+                html.A(["VALUATION"], href=f'/company/{stock.ticker}/valuation', className="myblue-text")
             ]),
             html.Li([
-                html.A(["NEWS"], href='#', className="black-text")
-            ], className='active'),
+                html.A(["NEWS"], href='#', className="white-text")
+            ], className='active', style={"background-color":"rgba(36, 74, 196, 0.9)"}),
 
         ])
     elif load == "financials-is" or load == "financials-bs" or load == "financials-cf":
         ul = html.Ul([
             html.Li([
-                html.A(["OVERVIEW"], href=f'/company/{stock.ticker}', className="black-text")
+                html.A(["OVERVIEW"], href=f'/company/{stock.ticker}', className="myblue-text")
             ]),
             html.Li([
-                html.A(["FINANCIALS"], href=f'/company/{stock.ticker}/financials', className="black-text")
-            ], className='active'),
+                html.A(["FINANCIALS"], href=f'/company/{stock.ticker}/financials')
+            ], className='active', style={"background-color":"rgba(36, 74, 196, 0.9)"}),
             html.Li([
-                html.A(["RATIOS"], href=f'/company/{stock.ticker}/ratios', className="black-text")
+                html.A(["RATIOS"], href=f'/company/{stock.ticker}/ratios', className="myblue-text")
             ]),
             html.Li([
-                html.A(["VALUATION"], href=f'/company/{stock.ticker}/valuation', className="black-text")
+                html.A(["VALUATION"], href=f'/company/{stock.ticker}/valuation', className="myblue-text")
             ]),
             html.Li([
-                html.A(["NEWS"], href=f'/company/{stock.ticker}/news', className="black-text")
+                html.A(["NEWS"], href=f'/company/{stock.ticker}/news', className="myblue-text")
             ]),
 
         ])
     else:
         ul = html.Ul([
             html.Li([
-                html.A(["OVERVIEW"], href='#', className="black-text")
-            ], className='active'),
+                html.A(["OVERVIEW"], href='#')
+            ], className='active', style={"background-color":"rgba(36, 74, 196, 0.9)"}),
             html.Li([
-                html.A(["FINANCIALS"], href=f'{stock.ticker}/financials', className="black-text")
+                html.A(["FINANCIALS"], href=f'{stock.ticker}/financials', className="myblue-text")
             ]),
             html.Li([
-                html.A(["RATIOS"], href=f'/company/{stock.ticker}/ratios', className="black-text")
+                html.A(["RATIOS"], href=f'/company/{stock.ticker}/ratios', className="myblue-text")
             ]),
             html.Li([
-                html.A(["VALUATION"], href=f'{stock.ticker}/valuation', className="black-text")
+                html.A(["VALUATION"], href=f'{stock.ticker}/valuation', className="myblue-text")
             ]),
             html.Li([
-                html.A(["NEWS"], href=f'/company/{stock.ticker}/news', className="black-text")
+                html.A(["NEWS"], href=f'/company/{stock.ticker}/news', className="myblue-text")
             ]),
 
         ])
     tabs_html = html.Div([html.Div([  # row div
         html.Div([  # col 12 div
-            html.H4(f'{stock.name}', className='center-align'),
+            html.H4(f'{stock.name}', className='center-align myblue-text bold'),
         ], className="col s12"),
         html.Nav([
-            html.Div([ul], className='nav-wrapper')], className="navbar-basic"),
+            html.Div([ul], className='nav-wrapper')], className="navbar-basic", style={"border":"0"}),
     ], className="col s12")], className="row margin-bot0")
 
     return tabs_html
@@ -746,9 +746,9 @@ def update_graph(value, relayoutData, pathname):  # toggle
                     mode="lines",
                 ))
             if use_data == "adj":
-                graphValues = {1: ['High', df.high, '#3DAEA2'], 2: ['Low', df.low, '#C70838'], 3: ['Close', df.close, "#20639B"], 4: ['Adj. Close', df.adjusted_close, '#153F5F']}
+                graphValues = {1: ['High', df.high, '#00B287'], 2: ['Low', df.low, '#FF4A3B'], 3: ['Close', df.close, "#244ac4"], 4: ['Adj. Close', df.adjusted_close, '#153F5F']}
             elif use_data == "daily":
-                graphValues = {1: ['High', df.high, '#3DAEA2'], 2: ['Low', df.low, '#C70838'], 3: ['Close', df.close, "#20639B"]}
+                graphValues = {1: ['High', df.high, '#00B287'], 2: ['Low', df.low, '#FF4A3B'], 3: ['Close', df.close, "#244ac4"]}
             for val in value:
                 append_graph(graphValues[val][0], graphValues[val][1], graphValues[val][2])
 
@@ -934,7 +934,10 @@ def update_graph(value, relayoutData, pathname):  # toggle
                                      step='year',
                                      stepmode='backward'),
                                 dict(step='all', label="All")
-                            ])
+                            ]),
+                            font={"color":"white"},
+                            bgcolor="#006BDB",
+                            activecolor="#0083DA"
                         ),
                         rangeslider=dict(
                             yaxis=dict(

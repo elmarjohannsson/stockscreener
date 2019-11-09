@@ -22,207 +22,210 @@ def get_screener():
     ]))
 
     layout = html.Div([html.Div([
-        html.H3(["WE'RE LAUNCHING SOON!"], style={'marginBottom': 0}, className='center-align'),
-        html.H5(["Free Stock Data For the Nordic Markets"], style={'marginTop': 0, "paddingRight": "1.5em"}, className='center-align'),
-        dash_table.DataTable(  # table for creating filters
-            id='criteria-table',
-            data=df_screener_options.to_dict('records'),
-            columns=[
-                {"name": "Category", "id": "category", "presentation": "dropdown"},
-                {"name": "Ratio", "id": "criteria", "presentation": "dropdown"},
-                {"name": "Condition", "id": "condition", "presentation": "dropdown"},
-                {"name": "Value", "id": "value"}
-            ],
-            # style_table={'overflowX': 'scroll'},
-            style_cell_conditional=[
-                {'if': {'column_id': 'category'},
-                 'width': '35%'},
-                {'if': {'column_id': 'criteria'},
-                 'width': '35%'},
-                {'if': {'column_id': 'condition'},
-                 'width': '20%'},
-                {'if': {'column_id': 'value'},
-                 'width': '10%'},
-            ],
-            style_data_conditional=[
-                {
-                    'if': {'row_index': 'odd'},
-                    'backgroundColor': 'rgb(250, 250, 250)',
-                }
-            ],
-            style_header={"textAlign": "center", 'backgroundColor': 'rgb(240, 240, 240)', "fontWeight": "bold"},
-            row_deletable=True,
-            dropdown={
-                "condition": {
+        html.H4(["STOCK SCREENER"], style={'marginTop': "0.5em"}, className='center-align myblue-text bold'),
+        # html.Div(className="divider"),
+        # html.H5(["Free Stock Data For the Nordic Markets"], style={'marginTop': 0, "paddingRight": "1.5em"}, className='center-align'),
+        html.Div([  # col s12 div only contains the datatable
+            dash_table.DataTable(  # table for creating filters
+                id='criteria-table',
+                data=df_screener_options.to_dict('records'),
+                columns=[
+                    {"name": "CATEGORY", "id": "category", "presentation": "dropdown"},
+                    {"name": "RATIO", "id": "criteria", "presentation": "dropdown"},
+                    {"name": "CONDITION", "id": "condition", "presentation": "dropdown"},
+                    {"name": "VALUE", "id": "value"}
+                ],
+                # style_table={'overflowX': 'scroll'},
+                style_cell_conditional=[
+                    {'if': {'column_id': 'category'},
+                     'width': '35%'},
+                    {'if': {'column_id': 'criteria'},
+                     'width': '35%'},
+                    {'if': {'column_id': 'condition'},
+                     'width': '20%'},
+                    {'if': {'column_id': 'value'},
+                     'width': '10%'},
+                ],
+                style_data_conditional=[
+                    {
+                        'if': {'row_index': 'odd'},
+                        'backgroundColor': 'rgb(250, 250, 250)',
+                    },
+                ],
+                style_header={"textAlign": "center", 'backgroundColor': 'white', "fontWeight": "bold", "font-size": "larger", "color": "#006BDB"},
+                row_deletable=True,
+                dropdown={
+                    "condition": {
+                        "options": [
+                            {"label": i, "value": i}
+                            for i in [
+                                "More than",
+                                "Equal to",
+                                "Less than"
+                            ]
+                        ]
+                    },
+                    "category": {
+                        "options": [
+                            {"label": i, "value": i}
+                            for i in [
+                                # "Descriptive",
+                                "Financials",
+                                "Revenue Growth",
+                                "Income Growth",
+                                "Efficiency",
+                                "Profitability",
+                                "Cash Flow",
+                                "Liquidity",
+                                # "Valuation"
+                            ]
+                        ]
+                    }
+                },
+                dropdown_conditional=[{
+                    "if": {
+                        'column_id': "criteria",
+                        "filter_query": "{category} eq 'Descriptive'"
+                    },
                     "options": [
-                        {"label": i, "value": i}
+                        {'label': i, 'value': i}
                         for i in [
-                            "More than",
-                            "Equal to",
-                            "Less than"
+                            "Market Cap",
+                            "Sector",
+                            "30-Day Avg Volume",
+                            "Share Price",
+                            "Stock Exchange",
+                            "Currency",
+                            "Shares Outstanding"
                         ]
                     ]
-                },
-                "category": {
+                }, {
+                    "if": {
+                        'column_id': "criteria",
+                        "filter_query": "{category} eq 'Financials'"
+                    },
                     "options": [
-                        {"label": i, "value": i}
+                        {'label': i, 'value': i}
                         for i in [
-                            # "Descriptive",
-                            "Financials",
-                            "Revenue Growth",
-                            "Income Growth",
-                            "Efficiency",
-                            "Profitability",
-                            "Cash Flow",
-                            "Liquidity",
-                            # "Valuation"
+                            "EPS, DKK",
+                            # "Latest Dividends",
+                            "Payout Ratio, %",
+                            "Book Value per Share, DKK",
+                            "Free Cash Flow, Mill DKK",
+                            "Free Cash Flow per Share, DKK"
                         ]
                     ]
-                }
-            },
-            dropdown_conditional=[{
-                "if": {
-                    'column_id': "criteria",
-                    "filter_query": "{category} eq 'Descriptive'"
-                },
-                "options": [
-                    {'label': i, 'value': i}
-                    for i in [
-                        "Market Cap",
-                        "Sector",
-                        "30-Day Avg Volume",
-                        "Share Price",
-                        "Stock Exchange",
-                        "Currency",
-                        "Shares Outstanding"
+                }, {
+                    "if": {
+                        'column_id': "criteria",
+                        "filter_query": "{category} eq 'Income Growth'"
+                    },
+                    "options": [
+                        {'label': i, 'value': i}
+                        for i in [
+                            "YoY Growth, %",
+                            "3-Year Avg Growth, %",
+                            "5-Year Avg Growth, %",
+                            "10-Year Avg Growth, %"
+                        ]
                     ]
-                ]
-            }, {
-                "if": {
-                    'column_id': "criteria",
-                    "filter_query": "{category} eq 'Financials'"
-                },
-                "options": [
-                    {'label': i, 'value': i}
-                    for i in [
-                        "EPS, DKK",
-                        # "Latest Dividends",
-                        "Payout Ratio, %",
-                        "Book Value per Share, DKK",
-                        "Free Cash Flow, Mill DKK",
-                        "Free Cash Flow per Share, DKK"
+                }, {
+                    "if": {
+                        'column_id': "criteria",
+                        "filter_query": "{category} eq 'Revenue Growth'"
+                    },
+                    "options": [
+                        {'label': i, 'value': i}
+                        for i in [
+                            "YoY Growth, %",
+                            "3-Year Avg Growth, %",
+                            "5-Year Avg Growth, %",
+                            "10-Year Avg Growth, %"
+                        ]
                     ]
-                ]
-            }, {
-                "if": {
-                    'column_id': "criteria",
-                    "filter_query": "{category} eq 'Income Growth'"
-                },
-                "options": [
-                    {'label': i, 'value': i}
-                    for i in [
-                        "YoY Growth, %",
-                        "3-Year Avg Growth, %",
-                        "5-Year Avg Growth, %",
-                        "10-Year Avg Growth, %"
+                }, {
+                    "if": {
+                        'column_id': "criteria",
+                        "filter_query": "{category} eq 'Efficiency'"
+                    },
+                    "options": [
+                        {'label': i, 'value': i}
+                        for i in [
+                            "Asset Turnover",
+                            "Fixed Assets Turnover",
+                            "Inventory Turnover",
+                            "Receivables Turnover",
+                            "Days Inventory",
+                            "Days Sales Outstanding",
+                            "Payables Period",
+                            "Cash Conversion Cycle"
+                        ]
                     ]
-                ]
-            }, {
-                "if": {
-                    'column_id': "criteria",
-                    "filter_query": "{category} eq 'Revenue Growth'"
-                },
-                "options": [
-                    {'label': i, 'value': i}
-                    for i in [
-                        "YoY Growth, %",
-                        "3-Year Avg Growth, %",
-                        "5-Year Avg Growth, %",
-                        "10-Year Avg Growth, %"
+                }, {
+                    "if": {
+                        'column_id': "criteria",
+                        "filter_query": "{category} eq 'Profitability'"
+                    },
+                    "options": [
+                        {'label': i, 'value': i}
+                        for i in [
+                            "ROA Ratio",
+                            "ROE Ratio",
+                            "ROIC Ratio",
+                            "Net Margin, %",
+                            "Operating Margin, %",
+                            "Gross Margin, %",
+                            "Tax Rate, %",
+                            "Avg Financial Leverage",
+                            "Interest Coverage"
+                        ]
                     ]
-                ]
-            }, {
-                "if": {
-                    'column_id': "criteria",
-                    "filter_query": "{category} eq 'Efficiency'"
-                },
-                "options": [
-                    {'label': i, 'value': i}
-                    for i in [
-                        "Asset Turnover",
-                        "Fixed Assets Turnover",
-                        "Inventory Turnover",
-                        "Receivables Turnover",
-                        "Days Inventory",
-                        "Days Sales Outstanding",
-                        "Payables Period",
-                        "Cash Conversion Cycle"
+                }, {
+                    "if": {
+                        'column_id': "criteria",
+                        "filter_query": "{category} eq 'Cash Flow'"
+                    },
+                    "options": [
+                        {'label': i, 'value': i}
+                        for i in [
+                            "YoY Operating Cash Flow Growth, %",
+                            "YoY Free Cash Flow Growth, %",
+                            "Free Cash Flow / Sales, %",
+                            "Free Cash Flow / Net Income",
+                            "Cap Ex as a % of Sales",
+                        ]
                     ]
-                ]
-            }, {
-                "if": {
-                    'column_id': "criteria",
-                    "filter_query": "{category} eq 'Profitability'"
-                },
-                "options": [
-                    {'label': i, 'value': i}
-                    for i in [
-                        "ROA Ratio",
-                        "ROE Ratio",
-                        "ROIC Ratio",
-                        "Net Margin, %",
-                        "Operating Margin, %",
-                        "Gross Margin, %",
-                        "Tax Rate, %",
-                        "Avg Financial Leverage",
-                        "Interest Coverage"
+                }, {
+                    "if": {
+                        'column_id': "criteria",
+                        "filter_query": "{category} eq 'Liquidity'"
+                    },
+                    "options": [
+                        {'label': i, 'value': i}
+                        for i in [
+                            "Current Ratio",
+                            "Quick Ratio",
+                            "Debt/Equity"
+                            # "Financial Leverage"
+                        ]
                     ]
-                ]
-            }, {
-                "if": {
-                    'column_id': "criteria",
-                    "filter_query": "{category} eq 'Cash Flow'"
-                },
-                "options": [
-                    {'label': i, 'value': i}
-                    for i in [
-                        "YoY Operating Cash Flow Growth, %",
-                        "YoY Free Cash Flow Growth, %",
-                        "Free Cash Flow / Sales, %",
-                        "Free Cash Flow / Net Income",
-                        "Cap Ex as a % of Sales",
+                }, {
+                    "if": {
+                        'column_id': "criteria",
+                        "filter_query": "{category} eq 'Valuation'"
+                    },
+                    "options": [
+                        {'label': i, 'value': i}
+                        for i in [
+                            "P/E Ratio",
+                            "Enterprise Value"
+                        ]
                     ]
-                ]
-            }, {
-                "if": {
-                    'column_id': "criteria",
-                    "filter_query": "{category} eq 'Liquidity'"
-                },
-                "options": [
-                    {'label': i, 'value': i}
-                    for i in [
-                        "Current Ratio",
-                        "Quick Ratio",
-                        "Debt/Equity"
-                        # "Financial Leverage"
-                    ]
-                ]
-            }, {
-                "if": {
-                    'column_id': "criteria",
-                    "filter_query": "{category} eq 'Valuation'"
-                },
-                "options": [
-                    {'label': i, 'value': i}
-                    for i in [
-                        "P/E Ratio",
-                        "Enterprise Value"
-                    ]
-                ]
-            }],
-            editable=True,
-        ),
-        html.Button('Add Filter', "add-rows-button", n_clicks=0, className='btn', style={"margin-top": "6px"}),
+                }],
+                editable=True,
+            )
+        ]),
+        html.Button('Add Filter', "add-rows-button", n_clicks=0, className='btn myblue', style={"margin-top": "6px"}),
         html.Div(id='results')
         # The table for displaying the data
         # dash_table.DataTable(
@@ -419,14 +422,14 @@ def update_screener_table(rows):
         stock_card = html.Div([  # html syntax for each company card.
             html.Div([
                 html.Div([
-                    html.Span(name, className='card-title'),
+                    html.A(html.Span(name, className='card-title myblue-text'), href=f'/company/{ticker}'),
                     html.P(f"Price {price_latest} {stock_currency}"),
                     html.P(f"P/E {pe}"),
                     html.P(f"1 Year Return {return_1yr}"),
                     html.P(sector)
                 ], className='card-content'),
                 html.Div([
-                    html.A("See more", href=f'/company/{ticker}')
+                    html.A("See more", href=f'/company/{ticker}', className='myblue-text')
                 ], className='card-action')
             ], className="card")
         ], className="col s12 m6 l4")
@@ -434,8 +437,8 @@ def update_screener_table(rows):
         cards.append(stock_card)  # appending them all to a long list
 
     result_html = html.Div(className='col s12', children=[
-        html.H5(f"{len(positive)} RESULTS:", className="center-align"),
-        html.Div(className="divider"),
+        html.H5(f"{len(positive)} STOCKS FOUND", className="center-align myblue-text"),
+        html.Div(className="divider", style={"height": "1px"}),
         html.Div(cards)
     ])
     return result_html

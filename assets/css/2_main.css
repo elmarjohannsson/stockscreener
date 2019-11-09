@@ -30,7 +30,6 @@
     font-weight: bold;
 }
 a, a:hover, a:visited {
-  color: black;
   text-decoration: none; /* no underline */
 }
 .center{
@@ -38,6 +37,16 @@ a, a:hover, a:visited {
 }
 #stock_graph{
   margin-top: 5px;
+}
+
+html{
+  font-family: 'Source Sans Pro', sans-serif;
+}
+.content {
+  min-height: calc(100vh - 135px);
+}
+.footer {
+  height: 115px;
 }
 
 /* fallback */
@@ -77,30 +86,6 @@ a, a:hover, a:visited {
 .pt15 {
   padding-top: 10px!important
 }
-.my-green{
-  color: #3DAEA2;
-  background-color: #3DAEA2;
-}
-.my-blue{
-  color: #20639B;
-  background-color: #20639B;
-}
-a.my-blue:hover {
-  color: #3471A4;
-  background-color: #3471A4;
-}
-.my-dark-blue{
-  color: #153F5F;
-  background-color: #153F5F;
-}
-.my-red{
-  color: #C70838;
-  background-color: #C70838;
-}
-.my-orange{
-  color: #FE4A3B;
-  background-color: #FE4A3B;
-}
 nav{
   background-color:inherit;
   box-shadow: none;
@@ -115,14 +100,14 @@ nav{
 }
 
 .stock-checkbox:nth-child(1) {
-  background-color: #20639B;
+  background-color: #244ac4;
 }
 .stock-checkbox:nth-child(2) {
-  background-color: #3DAEA2;
+  background-color: #00B287;
 }
 
 .stock-checkbox:nth-child(3) {
-  background-color: #C70838;
+  background-color: #FF4A3B;
 }
 
 .stock-checkbox:nth-child(4) {
@@ -141,4 +126,138 @@ nav{
 }
 .margin-bot0{
   margin-bottom: 0;
+}
+.logo-svg{
+  display: block;
+  text-indent: -9999px;
+  width: 225px;
+  height: 65px;
+  background: url(logo.svg);
+  background-size: 225px 65px;
+}
+.logolarge-svg{
+  display: block;
+  text-indent: -9999px;
+  width: 325px;
+  height: 115px;
+  background: url(logo-large.svg);
+  background-size: 325px 115px;
+}
+
+.searchbar{
+  height: 50px;
+  width: 500px;
+}
+.card .card-action a:not(.btn):not(.btn-large):not(.btn-small):not(.btn-large):not(.btn-floating) {
+  color: #244ac4;
+  font-weight: bold;
+  font-size: initial;
+}
+
+.card .card-action a:not(.btn):not(.btn-large):not(.btn-small):not(.btn-large):not(.btn-floating):hover {
+  color: #0096C6;
+}
+.card .card-title {
+  font-weight: 450;
+}
+/*My color palette */
+/*BLUE*/
+.myblue{
+  background-color: #244ac4;
+}
+.my-blue{
+  color: #244ac4;
+  background-color: #244ac4;
+}
+.my-light-blue{
+  color: #0083DA;
+  background-color: #0083DA;
+}
+.my-light-blue-text{
+  color: #0083DA;
+}
+a.my-blue:hover {
+  color: #3471A4;
+  background-color: #3471A4;
+}
+.my-dark-blue{
+  color: #244ac4;
+  background-color: #244ac4;
+}
+button.myblue:hover{
+  background-color: #006BDB;
+}
+button.myblue:focus{
+  background-color: #006BDB;
+}
+.myblue-text, a.myblue-text,a.myblue-text:hover, a.myblue-text:focus, a.myblue-text:visited {
+  color: #244ac4;
+}
+
+/*RED*/
+.myred{
+  background-color: #FF4A3B;
+}
+.my-red{
+  color: #FF4A3B;
+  background-color: #FF4A3B;
+}
+
+/*GREEN*/
+.my-green{
+  color: #00B287;
+  background-color: #00B287;
+}
+
+/*ORANGE*/
+.my-orange{
+  color: #FF8167;
+  background-color: #FF8167;
+}
+
+/* Changing the CSS for the dash datatable*/
+.Select-menu-outer {
+     --accent : #0083DA;
+}
+.Select-arrow {
+  --accent: #0083DA;
+}
+.Select-clear {
+  --accent: #0083DA;
+}
+.dash-delete-cell {
+  --accent : #0083DA;
+}
+.column-header--edit{
+  --accent : #0083DA;
+}
+.column-header--delete{
+  --accent : #0083DA;
+}
+.dash-spreadsheet-container table {
+    --accent: #244ac4 !important;
+    --selected-background: #D3EDED !important;
+}
+
+/* Changing CSS for Dash graph*/
+/*.selector-rect {
+  fill: #006BDB !important;
+}
+.selector-rect:hover, .selector-rect:focus, .selector-rect:visited, .selector-rect:active, .selector-rect:focus-within {
+  fill: #244ac4 !important;
+}
+.selector-text {
+  fill: white !important;
+}*/
+
+a, a:hover, a:visited {
+  color:inherit;
+}
+nav .navbar-basic {
+  border: 0;
+}
+/*Company Nav bar*/
+nav ul li.active {
+    background-color: rgba(36, 74, 196, 0.9) !important;
+    color: white;
 }
