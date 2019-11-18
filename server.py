@@ -19,7 +19,7 @@ app = dash.Dash(__name__, meta_tags=[
     # search engines when displaying search results.
     {
         'name': 'description',
-        'content': 'Stock screener'
+        'content': 'Quantz Stock Screener'
     },
     # A tag that tells Internet Explorer (IE)
     # to use the latest renderer version available
@@ -43,3 +43,32 @@ app = dash.Dash(__name__, meta_tags=[
 
 app.config['suppress_callback_exceptions'] = True
 app.title = "Stockscreener.dk - Free Financial Data For The Nordic Markets!"
+
+app.index_string = '''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-152874377-1"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'UA-152874377-1');
+        </script>
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
