@@ -257,20 +257,20 @@ def get_keyratios_table(stock):
             html.H5(f'*Key Ratios for {stock.name} do not exist...')
         ])
     else:
-        rev_growth_vals, inc_growth_vals, efficiency_vals, financials_vals, profitability_vals, cashflow_vals, liquidity_vals = stock.get_all_keyratios()
+        rev_growth_vals, inc_growth_vals, efficiency_vals, financials_vals, profitability_vals, cashflow_vals, liquidity_vals, ope_growth_vals, eps_growth_vals = stock.get_all_keyratios()
         # print("get_all_keyratios function success")
-        del financials_vals
-        all_keyratios = [profitability_vals, cashflow_vals, liquidity_vals, efficiency_vals, rev_growth_vals, inc_growth_vals]
-        keyratios_name = ["PROFITABILITY", "CASH FLOW", "LIQUIDITY", "EFFICIENCY", "REVENUE GROWTH", "NET INCOME GROWTH"]
-        keyratios_startrow = [-1, -1, -1, -1, -1, -2]
+        # del financials_vals
+        all_keyratios = [financials_vals, profitability_vals, cashflow_vals, liquidity_vals, efficiency_vals, eps_growth_vals, rev_growth_vals, ope_growth_vals, inc_growth_vals]
+        keyratios_name = ["FINANCIAL", "PROFITABILITY", "CASH FLOW", "LIQUIDITY", "EFFICIENCY", "EPS GROWTH", "REVENUE GROWTH", "OPERATING INCOME GROWTH", "NET INCOME GROWTH"]
+        keyratios_startrow = [-1, -1, -1, -1, -1, -1, -1, -1, -1]
         num = 0
         for val in all_keyratios:  # filtering bad data out
             if val == []:  # if list is empty then we don't want to add it.
                 all_keyratios.remove(val)
                 del(keyratios_name[num])
                 del(keyratios_startrow[num])
+                print("deleted ", keyratios_name[num])
             num += 1
-
         keyratios_html = html.Div([
             html.Div([
                 html.Div(className='row', children=components.Table(

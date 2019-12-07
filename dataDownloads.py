@@ -175,15 +175,19 @@ def check_errors():
     empty_count = 0
     for root, dirs, files in os.walk(f'{PATH}/data/CompanyData/'):
         for file in files:
-            if os.stat(f'{PATH}/{root}/{file}').st_size == 0:
+            if os.stat(f'{root}/{file}').st_size == 0:
                 # Try to download the file again.
-                ticker = root[17:]
+                ticker = root
+                find = ticker.find("/")
+                while find != -1:
+                    ticker = ticker[find + 1:]
+                    find = ticker.find("/")
                 isin = universe[ticker][0]  # get the isin from pickle
                 company = CompanyFinancialData(ticker, isin)
                 company.download_all_financials()
                 # still empty then just delete the file. (error in morning stars data or in my search)
-                if os.stat(f'{PATH}/{root}/{file}').st_size == 0:
-                    os.remove(f'{PATH}/{root}/{file}')
+                if os.stat(f'{root}/{file}').st_size == 0:
+                    os.remove(f'{root}/{file}')
                     empty_count += 1
                     print(f"Error: {file} is an empty file.")
 
@@ -314,15 +318,23 @@ def calculate_average_keyratios():  # calculates average key ratios for the whol
     for root, dirs, files in os.walk(f"{PATH}/data/pickles/"):
         for file in files:
             if "_data" in file:
-                old_data = pickle.load(open(f'{PATH}/data/pickles/{file}', "rb"))
-                ratio_category = file[:-7]
-                for ratio, values in old_data.items():
-                    sum_values = 0
-                    n = 0
-                    for company_ticker, value in values.items():
-                        sum_values += Decimal(str(value[0]).replace(",", "."))
-                        n += 1
-                        sector_name = value[1][2]
+                old_data = pickle.load(open(f'{PATH}/data/pickles/{file}', "rb"))  # opening all the key ratio categories files
+                ratio_category = file[:-7]  # the name of the currently selected key ratio category
+                for ratio, values in old_data.items():  # for every ratio name and its values in the key ratio category file. The value is a list of all the companies containing their value of this ratio.
+                    sum_values = 0  # starting with a sum of 0
+                    n = 0  # starting with a n of 0
+                    for company_ticker, value in values.items():  # for every company get the value of the ratio
+                        val = str(value[0]).replace(",", ".")
+
+                        # CATCHING OUTLIERS
+                        if file in ["rev_growth_data.pickle", "inc_growth_data.pickle", "ope_growth_data.pickle", "eps_growth_data.pickle"] or ratio == 'Operating Cash Flow Growth % YOY':
+                            if float(val) < -100 or float(val) > 1000:  # if growth less than -100% or more than 1000%
+                                print(company_ticker, "OUTLIER IGNORED", file, ratio, val)
+                                continue
+                        # If no outlier found then the for loop continues here
+                        sum_values += Decimal(val)  # add the value to the sum
+                        n += 1  # increase the number with 1
+                        sector_name = value[1][2]  # getting the sector of the company
                         if sector_name in sector_average_keyratios:  # if the sector's name is in the data then store the data in there, else create a new key for the sector
                             if ratio_category in sector_average_keyratios[sector_name]:  # if the ratio category exists
                                 if ratio in sector_average_keyratios[sector_name][ratio_category]:  # if the ratio exists then store the data in there
@@ -336,9 +348,9 @@ def calculate_average_keyratios():  # calculates average key ratios for the whol
 
                     avg_ratio = float(sum_values / n)  # calculating market avg key ratios
                     if ratio_category in average_keyratios:  # if the category does not already exist in the file then add it
-                        average_keyratios[ratio_category].update({ratio: [avg_ratio, n]})
+                        average_keyratios[ratio_category].update({ratio: (avg_ratio, n)})
                     else:
-                        average_keyratios.update({ratio_category: {ratio: [avg_ratio, n]}})
+                        average_keyratios.update({ratio_category: {ratio: (avg_ratio, n)}})
 
     with open(f'{PATH}/data/pickles/average_keyratios.pickle', 'wb') as f:  # saving market averages
         pickle.dump(average_keyratios, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -422,11 +434,11 @@ if __name__ == "__main__":
     else:
         if args[1] == "update financials":
             print("updating financial data for all companies")
-            save_nasdaqcph_companies()  # updating the list of companies on the market.
+            # save_nasdaqcph_companies()  # updating the list of companies on the market.
             # # # **** Downloading the financials for every company. Should be redownloaded once in a while to get latest.
-            download_company_financial_data()  # if True then update all, otherwise only new companies in the market.
+            # download_company_financial_data()  # if True then update all, otherwise only new companies in the market.
             # # Check for errors and retry all companies with errors
-            check_errors()  # check how many errors still exist after trying again. Files that still error don't exist.
+            # check_errors()  # check how many errors still exist after trying again. Files that still error don't exist.
             get_all_keyratios_avgs()  # updates the pickle files for all stocks and then updates the calculated average market and sector of each key ratio.
 
         elif args[1] == "update prices":
@@ -464,8 +476,9 @@ if __name__ == "__main__":
             print('"test" for testing new functions')
             print("'ticker {ticker}' for updating prices for ticker")
 
-            stock = usedata.Stock("SAS-DKK.CPH", "name", "isin", "sector", "stock_currency")  # ticker, name, isin, sector, stock_currency
-            stock.save_keyratios()
+            # stock = usedata.Stock("SAS-DKK.CPH", "name", "isin", "sector", "stock_currency")  # ticker, name, isin, sector, stock_currency
+            # stock.save_keyratios()
+            calculate_average_keyratios()
     end = time.time()
     run_time_s = end - start
     run_time_m = run_time_s / 60

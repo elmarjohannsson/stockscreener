@@ -175,11 +175,16 @@ class Stock(object):
     # Calculates the debt ratio: total liabilities / total assets
     def calc_debt_ratio(self):
         assets, liabilities = self.get_balance()
-        try:
-            debt_ratio = liabilities / assets
-            return debt_ratio
-        except ZeroDivisionError:
+        if assets[-1] == assets[-2] == assets[-3] == assets[-4] == assets[-5] == '*':
             return "*"
+        elif liabilities[-1] == liabilities[-2] == liabilities[-3] == liabilities[-4] == liabilities[-5] == '*':
+            return "*"
+        else:
+            try:
+                debt_ratio = liabilities / assets
+                return debt_ratio
+            except ZeroDivisionError:
+                return "*"
 
     # Calculates the company's Enterprise value: market cap + total borrowing - cash
     def calc_enterprise_value(self):
@@ -223,18 +228,19 @@ class Stock(object):
         shares = df_keyratios.loc["Shares Mil"]
         return shares
 
-    def get_all_keyratios(self, result=''):
+    def get_growth(self):
         try:
-            df_kr = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=0, skip_blank_lines=True, index_col=[0], skiprows=range(0, 2))
+            df_growth = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=0, skip_blank_lines=True, index_col=[0], skiprows=range(0, 42), nrows=20)
         except FileNotFoundError:
             return '*'
-        df_kr.fillna('*', inplace=True)
+        df_growth.fillna('*', inplace=True)
+        if "Latest Qtr" in list(df_growth):
+            df_growth.drop(["Latest Qtr"], inplace=True, axis=1)
 
-        # to get the data from the cvs.
-        growth_yoy = df_kr.loc['Year over Year']
-        growth_3y = df_kr.loc['3-Year Average']
-        growth_5y = df_kr.loc['5-Year Average']
-        growth_10y = df_kr.loc['10-Year Average']
+        growth_yoy = df_growth.loc['Year over Year']
+        growth_3y = df_growth.loc['3-Year Average']
+        growth_5y = df_growth.loc['5-Year Average']
+        growth_10y = df_growth.loc['10-Year Average']
 
         # revenue growth
         revenue_growth_yoy = growth_yoy.iloc[0]  # Returns as a pandas Series
@@ -248,6 +254,18 @@ class Stock(object):
                 pass
             else:
                 rev_growth_vals.append(val)  # append those that are not only nan values.
+        # operating income growth
+        ope_growth_yoy = growth_yoy.iloc[1]  # Returns as a pandas Series
+        ope_growth_3y = growth_3y.iloc[1]
+        ope_growth_5y = growth_5y.iloc[1]
+        ope_growth_10y = growth_10y.iloc[1]
+        ope_growth_vals_unsorted = [ope_growth_yoy, ope_growth_3y, ope_growth_5y, ope_growth_10y]  # combining them to a list
+        ope_growth_vals = []
+        for val in ope_growth_vals_unsorted:  # Do not add value if only NaN values.
+            if val[-1] == val[-2] == val[-3] == val[-4] == val[-5] == val[-6] == '*':
+                pass
+            else:
+                ope_growth_vals.append(val)  # append those that are not only nan values.
         # net income growth
         income_growth_yoy = growth_yoy.iloc[2]
         income_growth_3y = growth_3y.iloc[2]
@@ -260,6 +278,28 @@ class Stock(object):
                 pass
             else:
                 inc_growth_vals.append(val)  # append those that are not only nan values.
+        # net income growth
+        eps_growth_yoy = growth_yoy.iloc[3]
+        eps_growth_3y = growth_3y.iloc[3]
+        eps_growth_5y = growth_5y.iloc[3]
+        eps_growth_10y = growth_10y.iloc[3]
+        eps_growth_vals_unsorted = [eps_growth_yoy, eps_growth_3y, eps_growth_5y, eps_growth_10y]  # combining them to a list
+        eps_growth_vals = []
+        for val in eps_growth_vals_unsorted:  # Do not add value if only NaN values.
+            if val[-1] == val[-2] == val[-3] == val[-4] == val[-5] == val[-6] == '*':
+                pass
+            else:
+                eps_growth_vals.append(val)  # append those that are not only nan values.
+
+        return rev_growth_vals, ope_growth_vals, inc_growth_vals, eps_growth_vals
+
+    def get_all_keyratios(self, result=''):
+        try:
+            df_kr = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=0, skip_blank_lines=True, index_col=[0], skiprows=range(0, 2))
+        except FileNotFoundError:
+            return '*'
+        df_kr.fillna('*', inplace=True)
+
         # Efficiency
         fixed_assets_turnover = df_kr.loc['Fixed Assets Turnover']
         assets_turnover = df_kr.loc['Asset Turnover']
@@ -328,6 +368,9 @@ class Stock(object):
                 pass
             else:
                 liquidity_vals.append(val)  # append those that are not only nan values.
+
+        # Growth
+        rev_growth_vals, ope_growth_vals, inc_growth_vals, eps_growth_vals = self.get_growth()
         # Financials
         eps, payout_ratio, book_value_per_share, free_cash_flow, free_cash_flow_per_share = self.get_financials()
 
@@ -339,7 +382,7 @@ class Stock(object):
             else:
                 financials_vals.append(val)  # append those that are not only nan values.
 
-        return rev_growth_vals, inc_growth_vals, efficiency_vals, financials_vals, profitability_vals, cashflow_vals, liquidity_vals
+        return rev_growth_vals, inc_growth_vals, efficiency_vals, financials_vals, profitability_vals, cashflow_vals, liquidity_vals, ope_growth_vals, eps_growth_vals
 
     def get_valuation_ratios(self):  # right now it only gets the current ratio using the current price. Later I want to add historical as well.
         df_financials = pd.read_csv(f'{PATH}/data/CompanyData/{self.ticker}/{self.ticker}_KeyRatios.cvs', delimiter=',', header=2, skip_blank_lines=True, index_col=[0], nrows=15)
@@ -452,7 +495,7 @@ class Stock(object):
     # Additionally, at the same time as the above function, we check if the stocks in each pickle are also in the universe. If we find a ticker that should not be there we delete it.
     def save_keyratios(self):
         try:
-            rev_growth_vals, inc_growth_vals, efficiency_vals, financials_vals, profitability_vals, cashflow_vals, liquidity_vals = self.get_all_keyratios()
+            rev_growth_vals, inc_growth_vals, efficiency_vals, financials_vals, profitability_vals, cashflow_vals, liquidity_vals, ope_growth_vals, eps_growth_vals = self.get_all_keyratios()
         except ValueError:
             return print(f"Key Ratios for {self.ticker} could not be obtained.")
 
@@ -518,7 +561,7 @@ class Stock(object):
         # Revenue growth ratios:
         stock_id = [self.name, self.isin, self.sector, self.stock_currency]
         # categories = {"rev_growth_data": rev_growth_vals, "inc_growth_data": inc_growth_vals}
-        categories = {"rev_growth_data": rev_growth_vals, "inc_growth_data": inc_growth_vals, "efficiency_data": efficiency_vals, "financials_data": financials_vals, "profitability_data": profitability_vals, "cashflow_data": cashflow_vals, "liquidity_data": liquidity_vals}
+        categories = {"rev_growth_data": rev_growth_vals, "inc_growth_data": inc_growth_vals, "efficiency_data": efficiency_vals, "financials_data": financials_vals, "profitability_data": profitability_vals, "cashflow_data": cashflow_vals, "liquidity_data": liquidity_vals, "ope_growth_data": ope_growth_vals, "eps_growth_data": eps_growth_vals}
 
         for pickle_name, category_vals in categories.items():
                 # check if the value exists
@@ -526,7 +569,10 @@ class Stock(object):
                 if ratio[-1] != "*":  # if the TTM data does not exist, we use the most recent year.
                     ratio_value = ratio[-1]
                 elif ratio[-2] != "*":
-                    ratio_value = ratio[-2]
+                    if pickle_name in ["rev_growth_data", "inc_growth_vals", "ope_growth_vals", "eps_growth_vals"]:  # if its one of the growth values then there is no TTM, so we don't want to take some outdated data and don't count it in
+                        ratio_value = None
+                    else:
+                        ratio_value = ratio[-2]
                 else:  # if the most recent year doesn't exist for this company then we don't count it in.
                     ratio_value = None
                 if ratio_value is not None:
@@ -561,5 +607,10 @@ if __name__ == '__main__':
     end = time.time()
     print('time: ', end - start)
 
-    stock = Stock("VWS.CPH", "", "", "", "")
-    stock.save_keyratios()
+    stock = Stock("ONXEO.CPH", "", "", "", "")
+    rev_growth_vals, inc_growth_vals, efficiency_vals, financials_vals, profitability_vals, cashflow_vals, liquidity_vals, ope_growth_vals, eps_growth_vals = stock.get_all_keyratios()
+    all_keyratios = [financials_vals, profitability_vals, cashflow_vals, liquidity_vals, efficiency_vals, eps_growth_vals, rev_growth_vals, ope_growth_vals, inc_growth_vals]
+    n = 0
+    for v in all_keyratios:
+        n += 1
+        print(v, "number ", n)

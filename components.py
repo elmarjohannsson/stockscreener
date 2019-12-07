@@ -119,7 +119,12 @@ class Table(object):
         market_avg = pickle.load(open(f"{PATH}/data/pickles/average_keyratios.pickle", "rb"))
         for val in self.values:  # val returns a list of pandas series that all use the same header columns.
             table = []
-
+            print(val, "VAL")
+            print(self.values[num], "V1", type(self.values[num]))
+            print(self.values[num][self.index], "V2")
+            print(self.values[num][self.index].index, "V3")
+            print(self.values[num][self.index].index.tolist(), "V4")
+            print(self.values[num][self.index].index.tolist()[n[num]])
             tr = html.Thead([html.Tr([  # horizontal header showing the dates
                 html.Th(),
                 html.Th([self.values[num][self.index].index.tolist()[n[num]]], scope="col"),
@@ -144,11 +149,18 @@ class Table(object):
                 category = "rev_growth_data"
             elif category == "NET INCOME GROWTH":
                 category = "inc_growth_data"
+            elif category == "OPERATING INCOME GROWTH":
+                category = "ope_growth_data"
+            elif category == "EPS GROWTH":
+                category = "eps_growth_data"
+            elif category == "FINANCIAL":
+                category = "financials_data"
             for v in val:  # the rows
+                print(v, type(v), "111111111111111111")
+                print(v.name, "2222222222222")
                 market_avg_value = market_avg[category][v.name][0]
                 market_avg_value = round(market_avg_value, 2)
                 title = str(v.name.title())
-
                 if "Dkk" in title:
                     title = title.replace("Dkk", "DKK")
                 if "Eur" in title:
